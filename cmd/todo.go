@@ -5,8 +5,13 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"runtime/debug"
 
 	"github.com/DanWlker/remind/entity"
+	"github.com/DanWlker/remind/helper"
+	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +27,51 @@ var todoCmd = &cobra.Command{
 }
 
 func todoRun(cmd *cobra.Command, args []string) {
-	items := []entity.TodoEntity{}
+	items, _ := ReadItems(helper.GetDataFile())
 	for _, x := range args {
 		items = append(items, entity.TodoEntity{Text: x})
 	}
+	err := SaveItems(helper.GetDataFile(), items)
+
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+
 	fmt.Printf("%#v\n", items)
+}
+
+func SaveItems(filename string, items []entity.TodoEntity) error {
+	b, err := yaml.Marshal(items)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(b))
+	fmt.Println(string(filename))
+
+	err = os.WriteFile(filename, b, 0644)
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func ReadItems(filename string) ([]entity.TodoEntity, error) {
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		debug.PrintStack()
+		log.Println(err)
+		return []entity.TodoEntity{}, err
+	}
+	var items []entity.TodoEntity
+	if err := yaml.Unmarshal(b, &items); err != nil {
+		debug.PrintStack()
+		log.Println(err)
+		return []entity.TodoEntity{}, err
+	}
+	return items, nil
 }
 
 func init() {
