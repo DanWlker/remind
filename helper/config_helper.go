@@ -2,6 +2,7 @@ package helper
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -9,20 +10,49 @@ import (
 	"strings"
 
 	"github.com/DanWlker/remind/constant"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-func GetDataFile() string {
-
-	dataFile := strings.TrimSpace(viper.GetString(constant.DATA_FILE_KEY))
-	if dataFile == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			cobra.CheckErr(err)
+func GetDataFolder() (string, error) {
+	dataFolder := strings.TrimSpace(viper.GetString(constant.DATA_FOLDER_KEY))
+	if dataFolder == "" {
+		home, errHomeDir := os.UserHomeDir()
+		if errHomeDir != nil {
+			return "", fmt.Errorf("os.UserHomeDir: %w", errHomeDir)
 		}
-		dataFile = home + constant.DEFAULT_DATA_PATH_AFTER_HOME + string(os.PathSeparator) + "tempdata.yaml"
+		dataFolder = home + constant.DEFAULT_DATA_PATH_AFTER_HOME
 	}
+
+	_, errStat := os.Stat(dataFolder)
+
+	// switch {
+	// case errors.Is(errStat, os.ErrNotExist):
+	// 	errMkDirAll := os.MkdirAll(dataFolder, 0770)
+	// 	if errMkDirAll != nil {
+	// 		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
+	// 	}
+	// case errStat != nil:
+	// 	return "", fmt.Errorf("os.Stat: %w", errStat)
+	// }
+
+	if errors.Is(errStat, os.ErrNotExist) {
+		errMkDirAll := os.MkdirAll(dataFolder, 0770)
+		if errMkDirAll != nil {
+			return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
+		}
+	} else if errStat != nil {
+		return "", fmt.Errorf("os.Stat: %w", errStat)
+	}
+
+	return dataFolder, nil
+}
+
+func GetDataFile() string {
+	folder, errGetDataFolder := GetDataFolder()
+	if errGetDataFolder != nil {
+		log.Println(errGetDataFolder)
+	}
+	dataFile := folder + string(os.PathSeparator) + "tempdata.yaml"
 
 	_, errStat := os.Stat(dataFile)
 	if errors.Is(errStat, os.ErrNotExist) {
