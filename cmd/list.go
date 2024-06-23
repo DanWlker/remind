@@ -5,24 +5,47 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/DanWlker/remind/helper"
 	"github.com/spf13/cobra"
 )
 
+const allFlag = "all"
+
 // listCmd represents the list command
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "Lists todos",
+	Long: `Lists todos, by default it attempts to list todos associated to
+	this folder, use the -a flag to list all todos`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dataFile := helper.GetDataFile()
-		fmt.Println(dataFile)
+		dataFolder, errGetDataFolder := helper.GetDataFolder()
+		if errGetDataFolder != nil {
+			// TODO: Change this when we optimize os.Stat from GetDataFolder
+			cobra.CheckErr(fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder))
+		}
+
+		listAll, errGetBool := cmd.Flags().GetBool(allFlag)
+		if errGetBool != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool))
+		}
+
+		if listAll {
+			items, errReadDir := os.ReadDir(dataFolder)
+			if errReadDir != nil {
+				cobra.CheckErr(fmt.Errorf("os.ReadDir(%w): %w", dataFolder, errReadDir))
+			}
+			for _, item := range items {
+				if item.IsDir() {
+					continue
+				}
+
+			}
+		}
+
 		items, err := ReadItems(dataFile)
 
 		if err != nil {
@@ -36,13 +59,5 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// listCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// listCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	listCmd.Flags().BoolP(allFlag, "a", false, "List all available todos")
 }

@@ -3,10 +3,7 @@ package helper
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
-	"path/filepath"
-	"runtime/debug"
 	"strings"
 
 	"github.com/DanWlker/remind/constant"
@@ -23,6 +20,7 @@ func GetDataFolder() (string, error) {
 		dataFolder = home + constant.DEFAULT_DATA_PATH_AFTER_HOME
 	}
 
+	// TODO: We can optimize this to only be checked if hit exception outside
 	_, errStat := os.Stat(dataFolder)
 
 	// switch {
@@ -45,30 +43,4 @@ func GetDataFolder() (string, error) {
 	}
 
 	return dataFolder, nil
-}
-
-func GetDataFile() string {
-	folder, errGetDataFolder := GetDataFolder()
-	if errGetDataFolder != nil {
-		log.Println(errGetDataFolder)
-	}
-	dataFile := folder + string(os.PathSeparator) + "tempdata.yaml"
-
-	_, errStat := os.Stat(dataFile)
-	if errors.Is(errStat, os.ErrNotExist) {
-		err := os.MkdirAll(filepath.Dir(dataFile), 0770)
-		if err != nil {
-			debug.PrintStack()
-			log.Println(err)
-		}
-		if _, errFileCreate := os.Create(dataFile); errFileCreate != nil {
-			debug.PrintStack()
-			log.Println(err)
-		}
-	} else if errStat != nil {
-		debug.PrintStack()
-		log.Println(errStat)
-	}
-
-	return dataFile
 }
