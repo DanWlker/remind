@@ -35,25 +35,10 @@ func listOne(fileFullPath string) {
 	// helper.ReadFromFile(fileFullPath)
 }
 
-func listAll() {
-	// items, errReadDir := os.ReadDir(dataFolder)
-	// if errReadDir != nil {
-	// 	cobra.CheckErr(fmt.Errorf("os.ReadDir(%v): %w", dataFolder, errReadDir))
-	// }
-	// for _, item := range items {
-	// 	if item.IsDir() {
-	// 		continue
-	// 	}
-	//
-	// 	if !strings.HasSuffix(item.Name(), constant.DEFAULT_DATA_FILE_EXTENSION) {
-	// 		continue
-	// 	}
-	// 	listOne(filepath.Join(dataFolder, item.Name()))
-	// }
+func listAll() error {
 	dataFolder, errGetDataFolder := helper.GetDataFolder()
 	if errGetDataFolder != nil {
-		// TODO: Change this when we optimize os.Stat from GetDataFolder
-		cobra.CheckErr(fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder))
+		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
 	defaultDataRecordFileFullPath := dataFolder + constant.DEFAULT_DATA_RECORD_FULL_FILE_NAME
@@ -62,26 +47,27 @@ func listAll() {
 	if errors.Is(errStat, os.ErrNotExist) {
 		_, errCreate := os.Create(defaultDataRecordFileFullPath)
 		if errCreate != nil {
-			cobra.CheckErr(fmt.Errorf("os.Create: %w", errStat))
+			return fmt.Errorf("os.Create: %w", errStat)
 		}
 	} else if errStat != nil {
-		cobra.CheckErr(fmt.Errorf("os.Stat: %w", errStat))
+		return fmt.Errorf("os.Stat: %w", errStat)
 	}
 
 	recordFile, errReadFile := os.ReadFile(defaultDataRecordFileFullPath)
 	if errReadFile != nil {
-		cobra.CheckErr(fmt.Errorf("os.ReadFile: %w", errReadFile))
+		return fmt.Errorf("os.ReadFile: %w", errReadFile)
 	}
 
 	var items []entity.ProjectRecordEntity
 	if errUnmarshal := yaml.Unmarshal(recordFile, &items); errUnmarshal != nil {
-		cobra.CheckErr(fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal))
+		return fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
 	}
 
 	for _, item := range items {
 		listOne(item.Path)
 	}
 
+	return nil
 }
 
 func listRun(cmd *cobra.Command, args []string) {
@@ -91,7 +77,10 @@ func listRun(cmd *cobra.Command, args []string) {
 	}
 
 	if shouldListAll {
-		listAll()
+		errListAll := listAll()
+		if errListAll != nil {
+			cobra.CheckErr(fmt.Errorf("listAll: %w", errListAll))
+		}
 		return
 	}
 
