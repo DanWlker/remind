@@ -10,7 +10,6 @@ import (
 	"runtime/debug"
 
 	"github.com/DanWlker/remind/entity"
-	"github.com/DanWlker/remind/helper"
 	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
@@ -27,17 +26,17 @@ var todoCmd = &cobra.Command{
 }
 
 func todoRun(cmd *cobra.Command, args []string) {
-	items, _ := ReadItems(helper.GetDataFile())
-	for _, x := range args {
-		items = append(items, entity.TodoEntity{Text: x})
-	}
-	err := SaveItems(helper.GetDataFile(), items)
-
-	if err != nil {
-		fmt.Printf("%v", err)
-	}
-
-	fmt.Printf("%#v\n", items)
+	// items, _ := ReadItems(helper.GetDataFile())
+	// for _, x := range args {
+	// 	items = append(items, entity.TodoEntity{Text: x})
+	// }
+	// err := SaveItems(helper.GetDataFile(), items)
+	//
+	// if err != nil {
+	// 	fmt.Printf("%v", err)
+	// }
+	//
+	// fmt.Printf("%#v\n", items)
 }
 
 func SaveItems(filename string, items []entity.TodoEntity) error {

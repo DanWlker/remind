@@ -26,6 +26,7 @@ import (
 	"os"
 
 	"github.com/DanWlker/remind/constant"
+	"github.com/DanWlker/remind/helper"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -53,10 +54,12 @@ func init() {
 }
 
 func initConfig() {
-	home, err := os.UserHomeDir()
-	cobra.CheckErr(err)
+	configFolder, errGetConfigFolder := helper.GetConfigFolder()
+	if errGetConfigFolder != nil {
+		cobra.CheckErr(fmt.Errorf("helper.GetConfigFolder: %w", errGetConfigFolder))
+	}
 
-	viper.AddConfigPath(home + constant.DEFAULT_CONFIG_FULL_PATH)
+	viper.AddConfigPath(configFolder)
 	viper.SetConfigType(constant.DEFAULT_CONFIG_FILE_TYPE)
 	viper.SetConfigName(constant.DEFAULT_CONFIG_FILE_NAME)
 
