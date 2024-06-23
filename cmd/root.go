@@ -56,7 +56,7 @@ func init() {
 func initConfig() {
 	configFolder, errGetConfigFolder := helper.GetConfigFolder()
 	if errGetConfigFolder != nil {
-		cobra.CheckErr(fmt.Errorf("helper.GetConfigFolder: %w", errGetConfigFolder))
+		cobra.CheckErr(fmt.Errorf("roomCmd: initConfig: helper.GetConfigFolder: %w", errGetConfigFolder))
 	}
 
 	viper.AddConfigPath(configFolder)

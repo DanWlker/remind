@@ -17,7 +17,7 @@ func GetConfigFolder() (string, error) {
 	}
 	configFolder := home + constant.DEFAULT_CONFIG_PATH_AFTER_HOME
 
-	errMkDirAll := os.MkdirAll(configFolder, os.ModeDir)
+	errMkDirAll := os.MkdirAll(configFolder, 0770)
 	if errMkDirAll != nil {
 		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
 	}

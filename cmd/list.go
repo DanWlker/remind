@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/DanWlker/remind/constant"
 	"github.com/DanWlker/remind/entity"
@@ -27,10 +26,16 @@ var listCmd = &cobra.Command{
 	Short:   "Lists todos",
 	Long: `Lists todos, by default it attempts to list todos associated to
 	this folder, use the -a flag to list all todos`,
-	Run: listRun,
+	Run: func(cmd *cobra.Command, args []string) {
+		errListRun := listRun(cmd, args)
+		if errListRun != nil {
+			cobra.CheckErr(fmt.Errorf("listRun: %w", errListRun))
+		}
+	},
 }
 
 func listOne(fileFullPath string) {
+	// TODO: Implement this
 	fmt.Println(fileFullPath)
 	// helper.ReadFromFile(fileFullPath)
 }
@@ -70,26 +75,26 @@ func listAll() error {
 	return nil
 }
 
-func listRun(cmd *cobra.Command, args []string) {
+func listRun(cmd *cobra.Command, args []string) error {
 	shouldListAll, errGetBool := cmd.Flags().GetBool(allFlag)
 	if errGetBool != nil {
-		cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool))
+		return fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool)
 	}
 
 	if shouldListAll {
 		errListAll := listAll()
 		if errListAll != nil {
-			cobra.CheckErr(fmt.Errorf("listAll: %w", errListAll))
+			return fmt.Errorf("listAll: %w", errListAll)
 		}
-		return
+		return nil
 	}
 
 	// Attempt to get current directory and list reminders associated with it
-	ex, errExecutable := os.Executable()
-	if errExecutable != nil {
-		cobra.CheckErr(fmt.Errorf("os.Executable: %w", errExecutable))
+	currentProgramRunFullPath, errGetCurrentProgramExecutionDir := helper.GetCurrentProgramExecutionDirectory()
+	if errGetCurrentProgramExecutionDir != nil {
+		return fmt.Errorf("helper.GetCurrentProgramExecutionDirectory: %w", errGetCurrentProgramExecutionDir)
 	}
-	currentProgramRunFullPath := filepath.Dir(ex)
+
 	currentProgramRunRemovedHomePath, errGetHomeRemovedFilePath := helper.GetHomeRemovedPath(currentProgramRunFullPath)
 	var filePathNotStartsWithHomeErr *r_error.FilePathNotStartsWithHome
 	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
@@ -97,10 +102,11 @@ func listRun(cmd *cobra.Command, args []string) {
 			fmt.Sprintf("Current program executed in path that does not include $HOME(%v), listRun:", filePathNotStartsWithHomeErr.HomeStr),
 		)
 	} else if errGetHomeRemovedFilePath != nil {
-		cobra.CheckErr(fmt.Errorf("helper.GetHomeRemovedFilePath: %w", errGetHomeRemovedFilePath))
+		return fmt.Errorf("helper.GetHomeRemovedFilePath: %w", errGetHomeRemovedFilePath)
 	}
 
 	listOne(currentProgramRunRemovedHomePath)
+	return nil
 }
 
 func init() {

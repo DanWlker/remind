@@ -26,7 +26,7 @@ func GetDataFolder() (string, error) {
 		dataFolder = home + constant.DEFAULT_DATA_PATH_AFTER_HOME
 	}
 
-	errMkDirAll := os.MkdirAll(dataFolder, os.ModeDir)
+	errMkDirAll := os.MkdirAll(dataFolder, 0770)
 	if errMkDirAll != nil {
 		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
 	}
