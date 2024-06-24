@@ -4,13 +4,17 @@ Copyright © 2024 DanWlker
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/DanWlker/remind/constant"
 	"github.com/DanWlker/remind/entity"
 	"github.com/DanWlker/remind/helper"
+	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -43,22 +47,25 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
 	}
 
-	idx := slices.IndexFunc(recordItems, func(item entity.ProjectRecordEntity) bool { return item.Path == directory })
+	idx := slices.IndexFunc(recordItems, func(item entity.ProjectRecordEntity) bool {
+		return item.Path == directory
+	})
+
+	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	if errGetDataFolder != nil {
+		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	}
 
 	var currentDirectoryRecord *entity.ProjectRecordEntity
 	if idx == -1 {
-		dataFolder, errGetDataFolder := helper.GetDataFolder()
-		if errGetDataFolder != nil {
-			return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-		}
-
 		newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+constant.DEFAULT_DATA_FILE_EXTENSION)
 		if errCreateTemp != nil {
 			return fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
 		}
 
+		_, fileName := filepath.Split(newFile.Name())
 		currentDirectoryRecord = &entity.ProjectRecordEntity{
-			DataFileName: newFile.Name(),
+			DataFileName: fileName,
 			Path:         directory,
 		}
 		recordItems = append(recordItems, *currentDirectoryRecord)
@@ -67,22 +74,29 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		currentDirectoryRecord = &recordItems[idx]
 	}
 
-	fmt.Println("===============")
-	fmt.Println(currentDirectoryRecord.DataFileName)
-	fmt.Println("===============")
+	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
+	_, errStat := os.Stat(dataFileFullPath)
 
-	// var todoList []entity.TodoEntity
-	// for _, item := range todoListString {
-	// 	todoList = append(todoList, entity.TodoEntity{Text: item})
-	// }
-	//
-	// yamlTodoList, errMarshal := yaml.Marshal(todoList)
-	// if errMarshal != nil {
-	// 	return fmt.Errorf("yaml.Marshal: %w", errMarshal)
-	// }
-	//
-	// dataFileName := currentDirectoryRecord.DataFileName
-	// os.WriteFile(dataFileName, yamlTodoList, 0644)
+	var todoList []entity.TodoEntity
+	if errStat == nil {
+		// TODO: Read out older file, implement this in list perhaps
+	} else if errors.Is(errStat, os.ErrNotExist) {
+		log.Println("File does not exist, will create now: %w", errStat)
+	} else {
+		return fmt.Errorf("os.Stat: %w", errStat)
+	}
+
+	for _, item := range todoListString {
+		todoList = append(todoList, entity.TodoEntity{Text: item})
+	}
+
+	// TODO: Figure out if this format is good
+	yamlTodoList, errMarshal := yaml.Marshal(todoList)
+	if errMarshal != nil {
+		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
+	}
+
+	os.WriteFile(dataFileFullPath, yamlTodoList, 0644)
 
 	return nil
 }
@@ -94,7 +108,7 @@ func addRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if shouldAddToGlobal {
-		errAddTodoAndAssociateTo := addTodoAndAssociateTo("~", args)
+		errAddTodoAndAssociateTo := addTodoAndAssociateTo("", args)
 		if errAddTodoAndAssociateTo != nil {
 			return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)
 		}
