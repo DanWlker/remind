@@ -7,13 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/DanWlker/remind/constant"
 	"github.com/DanWlker/remind/entity"
 	r_error "github.com/DanWlker/remind/error"
 	"github.com/DanWlker/remind/helper"
-	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -48,31 +45,9 @@ func listOne(fileFullPath string) {
 }
 
 func listAll() error {
-	dataFolder, errGetDataFolder := helper.GetDataFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-	}
-
-	defaultDataRecordFileFullPath := dataFolder + constant.DEFAULT_DATA_RECORD_FULL_FILE_NAME
-
-	_, errStat := os.Stat(defaultDataRecordFileFullPath)
-	if errors.Is(errStat, os.ErrNotExist) {
-		_, errCreate := os.Create(defaultDataRecordFileFullPath)
-		if errCreate != nil {
-			return fmt.Errorf("os.Create: %w", errCreate)
-		}
-	} else if errStat != nil {
-		return fmt.Errorf("os.Stat: %w", errStat)
-	}
-
-	recordFile, errReadFile := os.ReadFile(defaultDataRecordFileFullPath)
-	if errReadFile != nil {
-		return fmt.Errorf("os.ReadFile: %w", errReadFile)
-	}
-
-	var items []entity.ProjectRecordEntity
-	if errUnmarshal := yaml.Unmarshal(recordFile, &items); errUnmarshal != nil {
-		return fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
+	items, errGetRecordFileContents := helper.GetRecordFileContents()
+	if errGetRecordFileContents != nil {
+		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
 	}
 
 	for _, item := range items {

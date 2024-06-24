@@ -5,7 +5,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"slices"
 
+	"github.com/DanWlker/remind/constant"
 	"github.com/DanWlker/remind/entity"
 	"github.com/DanWlker/remind/helper"
 	"github.com/spf13/cobra"
@@ -33,12 +36,55 @@ var addCmd = &cobra.Command{
 	},
 }
 
-func addTodoAndAssociateTo(directory string, todoList []string) {
-	// TODO: Check file name associated with the current directory from record file
+func addTodoAndAssociateTo(directory string, todoListString []string) error {
+	// Find the record in the record file
+	recordItems, errGetRecordFileContents := helper.GetRecordFileContents()
+	if errGetRecordFileContents != nil {
+		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
+	}
 
-	// TODO: Create the file if it doesn't exist
+	idx := slices.IndexFunc(recordItems, func(item entity.ProjectRecordEntity) bool { return item.Path == directory })
 
-	// TODO: Write to the file
+	var currentDirectoryRecord *entity.ProjectRecordEntity
+	if idx == -1 {
+		dataFolder, errGetDataFolder := helper.GetDataFolder()
+		if errGetDataFolder != nil {
+			return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+		}
+
+		newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+constant.DEFAULT_DATA_FILE_EXTENSION)
+		if errCreateTemp != nil {
+			return fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
+		}
+
+		currentDirectoryRecord = &entity.ProjectRecordEntity{
+			DataFileName: newFile.Name(),
+			Path:         directory,
+		}
+		recordItems = append(recordItems, *currentDirectoryRecord)
+		helper.SetRecordFileContents(recordItems)
+	} else {
+		currentDirectoryRecord = &recordItems[idx]
+	}
+
+	fmt.Println("===============")
+	fmt.Println(currentDirectoryRecord.DataFileName)
+	fmt.Println("===============")
+
+	// var todoList []entity.TodoEntity
+	// for _, item := range todoListString {
+	// 	todoList = append(todoList, entity.TodoEntity{Text: item})
+	// }
+	//
+	// yamlTodoList, errMarshal := yaml.Marshal(todoList)
+	// if errMarshal != nil {
+	// 	return fmt.Errorf("yaml.Marshal: %w", errMarshal)
+	// }
+	//
+	// dataFileName := currentDirectoryRecord.DataFileName
+	// os.WriteFile(dataFileName, yamlTodoList, 0644)
+
+	return nil
 }
 
 func addRun(cmd *cobra.Command, args []string) error {
@@ -48,7 +94,10 @@ func addRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if shouldAddToGlobal {
-		addTodoAndAssociateTo("~", args)
+		errAddTodoAndAssociateTo := addTodoAndAssociateTo("~", args)
+		if errAddTodoAndAssociateTo != nil {
+			return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)
+		}
 		return nil
 	}
 
@@ -57,7 +106,10 @@ func addRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errHomeRemCurrProExDir)
 	}
 
-	addTodoAndAssociateTo(homeRemCurrProExDir, args)
+	errAddTodoAndAssociateTo := addTodoAndAssociateTo(homeRemCurrProExDir, args)
+	if errAddTodoAndAssociateTo != nil {
+		return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)
+	}
 
 	return nil
 }
