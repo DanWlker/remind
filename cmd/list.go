@@ -17,7 +17,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const allFlag = "all"
+var allFlag = entity.BoolFlagEntity{
+	FlagEntity: entity.FlagEntity{
+		Name:      "all",
+		Shorthand: "a",
+		Usage:     "List all available todos",
+	},
+	Value: false,
+}
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -52,7 +59,7 @@ func listAll() error {
 	if errors.Is(errStat, os.ErrNotExist) {
 		_, errCreate := os.Create(defaultDataRecordFileFullPath)
 		if errCreate != nil {
-			return fmt.Errorf("os.Create: %w", errStat)
+			return fmt.Errorf("os.Create: %w", errCreate)
 		}
 	} else if errStat != nil {
 		return fmt.Errorf("os.Stat: %w", errStat)
@@ -75,8 +82,8 @@ func listAll() error {
 	return nil
 }
 
-func listRun(cmd *cobra.Command, args []string) error {
-	shouldListAll, errGetBool := cmd.Flags().GetBool(allFlag)
+func listRun(cmd *cobra.Command, _ []string) error {
+	shouldListAll, errGetBool := cmd.Flags().GetBool(allFlag.Name)
 	if errGetBool != nil {
 		return fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool)
 	}
@@ -90,12 +97,7 @@ func listRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Attempt to get current directory and list reminders associated with it
-	currentProgramRunFullPath, errGetCurrentProgramExecutionDir := helper.GetCurrentProgramExecutionDirectory()
-	if errGetCurrentProgramExecutionDir != nil {
-		return fmt.Errorf("helper.GetCurrentProgramExecutionDirectory: %w", errGetCurrentProgramExecutionDir)
-	}
-
-	currentProgramRunRemovedHomePath, errGetHomeRemovedFilePath := helper.GetHomeRemovedPath(currentProgramRunFullPath)
+	currentProgramRunRemovedHomePath, errGetHomeRemovedFilePath := helper.GetHomeRemovedCurrentProgramExecutionDirectory()
 	var filePathNotStartsWithHomeErr *r_error.FilePathNotStartsWithHome
 	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
 		log.Println(
@@ -112,5 +114,5 @@ func listRun(cmd *cobra.Command, args []string) error {
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	listCmd.Flags().BoolP(allFlag, "a", false, "List all available todos")
+	listCmd.Flags().BoolP(allFlag.Name, allFlag.Shorthand, allFlag.Value, allFlag.Usage)
 }

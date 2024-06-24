@@ -9,17 +9,17 @@ import (
 	r_error "github.com/DanWlker/remind/error"
 )
 
-func GetHomeRemovedPath(fileFullPath string) (string, error) {
+func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
 	home, errUserHomeDir := os.UserHomeDir()
 	if errUserHomeDir != nil {
 		return "", fmt.Errorf("os.UserHomeDir: %w", errUserHomeDir)
 	}
 
-	if !strings.HasPrefix(fileFullPath, home) {
-		return fileFullPath, &r_error.FilePathNotStartsWithHome{HomeStr: home}
+	if !strings.HasPrefix(filePathWithHome, home) {
+		return filePathWithHome, &r_error.FilePathNotStartsWithHome{HomeStr: home}
 	}
 
-	return strings.TrimPrefix(fileFullPath, home), nil
+	return strings.TrimPrefix(filePathWithHome, home), nil
 }
 
 func GetCurrentProgramExecutionDirectory() (string, error) {
@@ -28,4 +28,12 @@ func GetCurrentProgramExecutionDirectory() (string, error) {
 		return "", fmt.Errorf("os.Executable: %w", errExecutable)
 	}
 	return filepath.Dir(ex), nil
+}
+
+func GetHomeRemovedCurrentProgramExecutionDirectory() (string, error) {
+	currProExDir, errGetCurrProExDir := GetCurrentProgramExecutionDirectory()
+	if errGetCurrProExDir != nil {
+		return "", fmt.Errorf("GetCurrentProgramExecutionDirectory: %w", errGetCurrProExDir)
+	}
+	return FormatPathToRemoveHome(currProExDir)
 }

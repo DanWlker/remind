@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -32,4 +33,25 @@ func GetDataFolder() (string, error) {
 	}
 
 	return dataFolder, nil
+}
+
+func GetDataFile(fileName string) (string, error) {
+	dataFolder, errGetDataFolder := GetDataFolder()
+	if errGetDataFolder != nil {
+		return "", errGetDataFolder
+	}
+
+	fileFullPath := dataFolder + string(os.PathSeparator) + fileName
+
+	_, errStat := os.Stat(fileFullPath)
+	if errors.Is(errStat, os.ErrNotExist) {
+		_, errCreate := os.Create(fileFullPath)
+		if errCreate != nil {
+			return "", fmt.Errorf("os.Create: %w", errCreate)
+		}
+	} else if errStat != nil {
+		return "", errStat
+	}
+
+	return fileFullPath, nil
 }
