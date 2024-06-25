@@ -51,12 +51,13 @@ var listCmd = &cobra.Command{
 
 func listOne(pathToFind string) error {
 	projectRecordEntity, errFindProjectRecordEntity := helper.FindProjectRecordFromFileWith(pathToFind)
-	if errors.Is(errFindProjectRecordEntity, &r_error.RecordDoesNotExistError{}) {
-		pathToPrint := pathToFind
-		if pathToPrint == "" {
-			pathToPrint = "$HOME"
+	var errRecordDoesNotExist *r_error.RecordDoesNotExistError
+	if errors.As(errFindProjectRecordEntity, &errRecordDoesNotExist) {
+		recordIdentifier := errRecordDoesNotExist.RecordIdentifier
+		if recordIdentifier == "" {
+			recordIdentifier = "$HOME"
 		}
-		fmt.Println("No record linked to this folder found: " + pathToPrint)
+		fmt.Println("No record linked to this folder found: " + recordIdentifier)
 		return nil
 	} else if errFindProjectRecordEntity != nil {
 		return fmt.Errorf("helper.FindProjectRecordFromFileWith: %w", errFindProjectRecordEntity)
@@ -133,7 +134,7 @@ func listRun(cmd *cobra.Command, _ []string) error {
 	var filePathNotStartsWithHomeErr *r_error.FilePathNotStartsWithHome
 	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
 		log.Println(
-			fmt.Sprintf("Current program executed in path that does not include $HOME(%v), listRun:", filePathNotStartsWithHomeErr),
+			filePathNotStartsWithHomeErr.Error(),
 		)
 	} else if errGetHomeRemovedFilePath != nil {
 		return fmt.Errorf("helper.GetHomeRemovedFilePath: %w", errGetHomeRemovedFilePath)

@@ -16,7 +16,10 @@ func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
 	}
 
 	if !strings.HasPrefix(filePathWithHome, home) {
-		return filePathWithHome, fmt.Errorf("Path %v does not include home %v: %w", filePathWithHome, home, &r_error.FilePathNotStartsWithHome{})
+		return filePathWithHome, &r_error.FilePathNotStartsWithHome{
+			HomeStr: home,
+			FileStr: filePathWithHome,
+		}
 	}
 
 	return strings.TrimPrefix(filePathWithHome, home), nil

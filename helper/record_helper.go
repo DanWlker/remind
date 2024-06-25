@@ -91,7 +91,9 @@ func FindProjectRecordFromFileWith(homeRemovedFolderPath string) (entity.Project
 		}
 	}
 
-	return entity.ProjectRecordEntity{}, fmt.Errorf("Record %v does not exst: %w", homeRemovedFolderPath, &r_error.RecordDoesNotExistError{})
+	return entity.ProjectRecordEntity{}, &r_error.RecordDoesNotExistError{
+		RecordIdentifier: homeRemovedFolderPath,
+	}
 }
 func CreateNewRecord(pathIdentifier string) (entity.ProjectRecordEntity, error) {
 	dataFolder, errGetDataFolder := GetDataFolder()
