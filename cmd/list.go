@@ -52,7 +52,12 @@ var listCmd = &cobra.Command{
 func listOne(pathToFind string) error {
 	projectRecordEntity, errFindProjectRecordEntity := helper.FindProjectRecordFromFileWith(pathToFind)
 	if errors.Is(errFindProjectRecordEntity, &r_error.RecordDoesNotExistError{}) {
-		fmt.Println("No record linked to this folder found")
+		pathToPrint := pathToFind
+		if pathToPrint == "" {
+			pathToPrint = "$HOME"
+		}
+		fmt.Println("No record linked to this folder found: " + pathToPrint)
+		return nil
 	} else if errFindProjectRecordEntity != nil {
 		return fmt.Errorf("helper.FindProjectRecordFromFileWith: %w", errFindProjectRecordEntity)
 	}

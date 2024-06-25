@@ -7,10 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"slices"
 
-	"github.com/DanWlker/remind/constant"
 	"github.com/DanWlker/remind/entity"
 	"github.com/DanWlker/remind/helper"
 	"github.com/goccy/go-yaml"
@@ -57,16 +55,11 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 
 	var currentDirectoryRecord *entity.ProjectRecordEntity
 	if idx == -1 {
-		newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+constant.DEFAULT_DATA_FILE_EXTENSION)
-		if errCreateTemp != nil {
-			return fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
+		tempCurrentDirectoryRecord, errCreateNewRecord := helper.CreateNewRecord(directory)
+		if errCreateNewRecord != nil {
+			return fmt.Errorf("helper.CreateNewRecord: %w", errCreateNewRecord)
 		}
-
-		_, fileName := filepath.Split(newFile.Name())
-		currentDirectoryRecord = &entity.ProjectRecordEntity{
-			DataFileName: fileName,
-			Path:         directory,
-		}
+		currentDirectoryRecord = &tempCurrentDirectoryRecord
 		recordItems = append(recordItems, *currentDirectoryRecord)
 		helper.SetRecordFileContents(recordItems)
 	} else {
