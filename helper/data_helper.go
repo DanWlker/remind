@@ -8,15 +8,29 @@ import (
 
 	"github.com/DanWlker/remind/constant"
 	"github.com/DanWlker/remind/entity"
+	r_error "github.com/DanWlker/remind/error"
 	"github.com/goccy/go-yaml"
 	"github.com/spf13/viper"
 )
 
-func ReadFromFile(fileFullName string) ([]entity.TodoEntity, error) {
-	return []entity.TodoEntity{}, nil
+// This does not create the file if it doesn't exist
+func GetTodoFromDataFile(dataFileFullPath string) ([]entity.TodoEntity, error) {
+	file, errReadFile := os.ReadFile(dataFileFullPath)
+	if errReadFile != nil {
+		return []entity.TodoEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
+	}
+
+	var items []entity.TodoEntity
+	if errUnmarshal := yaml.Unmarshal(file, &items); errUnmarshal != nil {
+		return []entity.TodoEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
+	}
+
+	return items, nil
 }
 
-func WriteToFile() {}
+func WriteTodoToFile(fileFullPath string) error {
+	return nil
+}
 
 func GetDataFolder() (string, error) {
 	dataFolder := strings.TrimSpace(viper.GetString(constant.DATA_FOLDER_KEY))
@@ -28,33 +42,44 @@ func GetDataFolder() (string, error) {
 		dataFolder = home + constant.DEFAULT_DATA_PATH_AFTER_HOME
 	}
 
-	errMkDirAll := os.MkdirAll(dataFolder, 0770)
-	if errMkDirAll != nil {
+	if errMkDirAll := os.MkdirAll(dataFolder, 0770); errMkDirAll != nil {
 		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
 	}
 
 	return dataFolder, nil
 }
 
-func GetDataFile(fileName string) (string, error) {
-	dataFolder, errGetDataFolder := GetDataFolder()
-	if errGetDataFolder != nil {
-		return "", errGetDataFolder
+// func GetDataFile(fileName string) (string, error) {
+// 	dataFolder, errGetDataFolder := GetDataFolder()
+// 	if errGetDataFolder != nil {
+// 		return "", errGetDataFolder
+// 	}
+//
+// 	fileFullPath := dataFolder + string(os.PathSeparator) + fileName
+//
+// 	_, errStat := os.Stat(fileFullPath)
+// 	if errors.Is(errStat, os.ErrNotExist) {
+// 		_, errCreate := os.Create(fileFullPath)
+// 		if errCreate != nil {
+// 			return "", fmt.Errorf("os.Create: %w", errCreate)
+// 		}
+// 	} else if errStat != nil {
+// 		return "", errStat
+// 	}
+//
+// 	return fileFullPath, nil
+// }
+
+func PrettyPrintDataFile(dataFileFullPath string, prefix string) error {
+	todoList, errGetTodoFromDataFile := GetTodoFromDataFile(dataFileFullPath)
+	if errGetTodoFromDataFile != nil {
+		return fmt.Errorf("GetTodoFromDataFile: %w", errGetTodoFromDataFile)
 	}
 
-	fileFullPath := dataFolder + string(os.PathSeparator) + fileName
-
-	_, errStat := os.Stat(fileFullPath)
-	if errors.Is(errStat, os.ErrNotExist) {
-		_, errCreate := os.Create(fileFullPath)
-		if errCreate != nil {
-			return "", fmt.Errorf("os.Create: %w", errCreate)
-		}
-	} else if errStat != nil {
-		return "", errStat
+	for _, todo := range todoList {
+		fmt.Println(prefix + todo.Text)
 	}
-
-	return fileFullPath, nil
+	return nil
 }
 
 func GetRecordFile() (string, error) {
@@ -65,8 +90,7 @@ func GetRecordFile() (string, error) {
 
 	defaultDataRecordFileFullPath := dataFolder + constant.DEFAULT_DATA_RECORD_FULL_FILE_NAME
 
-	_, errStat := os.Stat(defaultDataRecordFileFullPath)
-	if errors.Is(errStat, os.ErrNotExist) {
+	if _, errStat := os.Stat(defaultDataRecordFileFullPath); errors.Is(errStat, os.ErrNotExist) {
 		_, errCreate := os.Create(defaultDataRecordFileFullPath)
 		if errCreate != nil {
 			return "", fmt.Errorf("os.Create: %w", errCreate)
@@ -96,6 +120,21 @@ func GetRecordFileContents() ([]entity.ProjectRecordEntity, error) {
 
 	return items, nil
 
+}
+
+func FindProjectRecordFromFileWith(homeRemovedFolderPath string) (entity.ProjectRecordEntity, error) {
+	allRecords, errGetRecordFileContents := GetRecordFileContents()
+	if errGetRecordFileContents != nil {
+		return entity.ProjectRecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetRecordFileContents)
+	}
+
+	for _, record := range allRecords {
+		if record.Path == homeRemovedFolderPath {
+			return record, nil
+		}
+	}
+
+	return entity.ProjectRecordEntity{}, fmt.Errorf("Record %v does not exst: %w", homeRemovedFolderPath, &r_error.RecordDoesNotExistError{})
 }
 
 func SetRecordFileContents(items []entity.ProjectRecordEntity) error {

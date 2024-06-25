@@ -16,7 +16,7 @@ func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
 	}
 
 	if !strings.HasPrefix(filePathWithHome, home) {
-		return filePathWithHome, &r_error.FilePathNotStartsWithHome{HomeStr: home}
+		return filePathWithHome, fmt.Errorf("Path %v does not include home %v: %w", filePathWithHome, home, &r_error.FilePathNotStartsWithHome{})
 	}
 
 	return strings.TrimPrefix(filePathWithHome, home), nil
@@ -27,6 +27,7 @@ func GetCurrentProgramExecutionDirectory() (string, error) {
 	if errExecutable != nil {
 		return "", fmt.Errorf("os.Executable: %w", errExecutable)
 	}
+
 	return filepath.Dir(ex), nil
 }
 
@@ -35,5 +36,11 @@ func GetHomeRemovedCurrentProgramExecutionDirectory() (string, error) {
 	if errGetCurrProExDir != nil {
 		return "", fmt.Errorf("GetCurrentProgramExecutionDirectory: %w", errGetCurrProExDir)
 	}
-	return FormatPathToRemoveHome(currProExDir)
+
+	path, errFormatPathToRemoveHome := FormatPathToRemoveHome(currProExDir)
+	if errFormatPathToRemoveHome != nil {
+		return "", fmt.Errorf("FormatPathToRemoveHome: %w", errFormatPathToRemoveHome)
+	}
+
+	return path, nil
 }

@@ -1,4 +1,5 @@
 /*
+list
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
 package cmd
@@ -7,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/DanWlker/remind/entity"
 	r_error "github.com/DanWlker/remind/error"
@@ -14,11 +16,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var allFlag = entity.BoolFlagEntity{
+var allFlag_list = entity.BoolFlagEntity{
 	FlagEntity: entity.FlagEntity{
 		Name:      "all",
 		Shorthand: "a",
 		Usage:     "List all available todos",
+	},
+	Value: false,
+}
+
+var globalFlag_list = entity.BoolFlagEntity{
+	FlagEntity: entity.FlagEntity{
+		Name:      "global",
+		Shorthand: "g",
+		Usage:     "List global todos",
 	},
 	Value: false,
 }
@@ -38,10 +49,23 @@ var listCmd = &cobra.Command{
 	},
 }
 
-func listOne(fileFullPath string) {
-	// TODO: Implement this
-	fmt.Println(fileFullPath)
-	// helper.ReadFromFile(fileFullPath)
+func listOne(pathToFind string) error {
+	projectRecordEntity, errFindProjectRecordEntity := helper.FindProjectRecordFromFileWith(pathToFind)
+	if errors.Is(errFindProjectRecordEntity, &r_error.RecordDoesNotExistError{}) {
+		fmt.Println("No record linked to this folder found")
+	} else if errFindProjectRecordEntity != nil {
+		return fmt.Errorf("helper.FindProjectRecordFromFileWith: %w", errFindProjectRecordEntity)
+	}
+
+	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	if errGetDataFolder != nil {
+		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	}
+
+	if errPrettyPrintFile := helper.PrettyPrintDataFile(dataFolder+string(os.PathSeparator)+projectRecordEntity.DataFileName, "  "); errPrettyPrintFile != nil {
+		return fmt.Errorf("helper.PrettyPrintDataFile: %w", errPrettyPrintFile)
+	}
+	return nil
 }
 
 func listAll() error {
@@ -50,44 +74,74 @@ func listAll() error {
 		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
 	}
 
+	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	if errGetDataFolder != nil {
+		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	}
+
 	for _, item := range items {
-		listOne(item.Path)
+		if item.Path == "" {
+			fmt.Println("Global:")
+		} else {
+			fmt.Println(item.Path + ":")
+		}
+
+		if errPrettyPrintDataFile := helper.PrettyPrintDataFile(dataFolder+string(os.PathSeparator)+item.DataFileName, "  "); errPrettyPrintDataFile != nil {
+			return errPrettyPrintDataFile
+		}
+
+		fmt.Println("")
 	}
 
 	return nil
 }
 
 func listRun(cmd *cobra.Command, _ []string) error {
-	shouldListAll, errGetBool := cmd.Flags().GetBool(allFlag.Name)
-	if errGetBool != nil {
-		return fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool)
+	// Check should list all
+	shouldListAll, errGetBoolAllFlag := cmd.Flags().GetBool(allFlag_list.Name)
+	if errGetBoolAllFlag != nil {
+		return fmt.Errorf("cmd.Flags().GetBool: errGetBoolAllFlag: %w", errGetBoolAllFlag)
 	}
-
 	if shouldListAll {
-		errListAll := listAll()
-		if errListAll != nil {
+		if errListAll := listAll(); errListAll != nil {
 			return fmt.Errorf("listAll: %w", errListAll)
 		}
 		return nil
 	}
 
+	// Check should list global
+	shoulListGlobal, errGetBoolGlobalFlag := cmd.Flags().GetBool(globalFlag_list.Name)
+	if errGetBoolGlobalFlag != nil {
+		return fmt.Errorf("cmd.Flags().GetBool: errGetBoolGlobalFlag: %w", errGetBoolGlobalFlag)
+	}
+	var pathToFind string
+	if shoulListGlobal {
+		if errListOneGlobal := listOne(""); errListOneGlobal != nil {
+			return fmt.Errorf("listOne: shouldListGlobal: %w", errListOneGlobal)
+		}
+		return nil
+	}
+
 	// Attempt to get current directory and list reminders associated with it
-	currentProgramRunRemovedHomePath, errGetHomeRemovedFilePath := helper.GetHomeRemovedCurrentProgramExecutionDirectory()
+	var errGetHomeRemovedFilePath error
+	pathToFind, errGetHomeRemovedFilePath = helper.GetHomeRemovedCurrentProgramExecutionDirectory()
 	var filePathNotStartsWithHomeErr *r_error.FilePathNotStartsWithHome
 	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
 		log.Println(
-			fmt.Sprintf("Current program executed in path that does not include $HOME(%v), listRun:", filePathNotStartsWithHomeErr.HomeStr),
+			fmt.Sprintf("Current program executed in path that does not include $HOME(%v), listRun:", filePathNotStartsWithHomeErr),
 		)
 	} else if errGetHomeRemovedFilePath != nil {
 		return fmt.Errorf("helper.GetHomeRemovedFilePath: %w", errGetHomeRemovedFilePath)
 	}
-
-	listOne(currentProgramRunRemovedHomePath)
+	if errListOneLocal := listOne(pathToFind); errListOneLocal != nil {
+		return fmt.Errorf("listOne: %v: %w", pathToFind, errListOneLocal)
+	}
 	return nil
 }
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 
-	listCmd.Flags().BoolP(allFlag.Name, allFlag.Shorthand, allFlag.Value, allFlag.Usage)
+	listCmd.Flags().BoolP(allFlag_list.Name, allFlag_list.Shorthand, allFlag_list.Value, allFlag_list.Usage)
+	listCmd.Flags().BoolP(globalFlag_list.Name, globalFlag_list.Shorthand, globalFlag_list.Value, globalFlag_list.Usage)
 }

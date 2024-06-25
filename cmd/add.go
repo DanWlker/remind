@@ -6,7 +6,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var globalFlag = entity.BoolFlagEntity{
+var globalFlag_add = entity.BoolFlagEntity{
 	FlagEntity: entity.FlagEntity{
 		Name:      "global",
 		Shorthand: "g",
@@ -74,14 +73,19 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		currentDirectoryRecord = &recordItems[idx]
 	}
 
+	// Read the file, it will exist if it reaches here
 	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
 	_, errStat := os.Stat(dataFileFullPath)
 
 	var todoList []entity.TodoEntity
 	if errStat == nil {
-		// TODO: Read out older file, implement this in list perhaps
+		var errReadFromFile error
+		todoList, errReadFromFile = helper.GetTodoFromDataFile(dataFileFullPath)
+		if errReadFromFile != nil {
+			return fmt.Errorf("helper.ReadFromFile: %w", errReadFromFile)
+		}
 	} else if errors.Is(errStat, os.ErrNotExist) {
-		log.Println("File does not exist, will create now: %w", errStat)
+		return fmt.Errorf("You fcked up, os.Stat: %w", errStat) // This should never occur
 	} else {
 		return fmt.Errorf("os.Stat: %w", errStat)
 	}
@@ -90,7 +94,6 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		todoList = append(todoList, entity.TodoEntity{Text: item})
 	}
 
-	// TODO: Figure out if this format is good
 	yamlTodoList, errMarshal := yaml.Marshal(todoList)
 	if errMarshal != nil {
 		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
@@ -102,7 +105,7 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 }
 
 func addRun(cmd *cobra.Command, args []string) error {
-	shouldAddToGlobal, errGetBool := cmd.Flags().GetBool(globalFlag.Name)
+	shouldAddToGlobal, errGetBool := cmd.Flags().GetBool(globalFlag_add.Name)
 	if errGetBool != nil {
 		return fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool)
 	}
@@ -120,8 +123,7 @@ func addRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errHomeRemCurrProExDir)
 	}
 
-	errAddTodoAndAssociateTo := addTodoAndAssociateTo(homeRemCurrProExDir, args)
-	if errAddTodoAndAssociateTo != nil {
+	if errAddTodoAndAssociateTo := addTodoAndAssociateTo(homeRemCurrProExDir, args); errAddTodoAndAssociateTo != nil {
 		return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)
 	}
 
@@ -131,5 +133,5 @@ func addRun(cmd *cobra.Command, args []string) error {
 func init() {
 	rootCmd.AddCommand(addCmd)
 
-	addCmd.Flags().BoolP(globalFlag.Name, globalFlag.Shorthand, globalFlag.Value, globalFlag.Usage)
+	addCmd.Flags().BoolP(globalFlag_add.Name, globalFlag_add.Shorthand, globalFlag_add.Value, globalFlag_add.Usage)
 }
