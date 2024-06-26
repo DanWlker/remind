@@ -26,7 +26,16 @@ func GetTodoFromDataFile(dataFileFullPath string) ([]entity.TodoEntity, error) {
 	return items, nil
 }
 
-func WriteTodoToFile(fileFullPath string) error {
+func WriteTodoToFile(dataFileFullPath string, todoList []entity.TodoEntity) error {
+	yamlTodoList, errMarshal := yaml.Marshal(todoList)
+	if errMarshal != nil {
+		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
+	}
+
+	errWriteFile := os.WriteFile(dataFileFullPath, yamlTodoList, 0644)
+	if errWriteFile != nil {
+		return fmt.Errorf("os.WriteFile: %w", errWriteFile)
+	}
 	return nil
 }
 
@@ -53,8 +62,8 @@ func PrettyPrintDataFile(dataFileFullPath string, prefix string) error {
 		return fmt.Errorf("GetTodoFromDataFile: %w", errGetTodoFromDataFile)
 	}
 
-	for _, todo := range todoList {
-		fmt.Println(prefix + todo.Text)
+	for i, todo := range todoList {
+		fmt.Printf("%v%v. %v\n", prefix, i, todo.Text)
 	}
 	return nil
 }

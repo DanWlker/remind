@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/DanWlker/remind/entity"
@@ -48,29 +49,74 @@ var removeCmd = &cobra.Command{
 			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool_all))
 		}
 
-		fmt.Println("remove called")
 		if errRemoveRun := removeRun(globalFlag, allFlag, args); errRemoveRun != nil {
 			cobra.CheckErr(fmt.Errorf("removeRun: %w", errGetBool_all))
 		}
 	},
 }
 
-func removeTodoAssociatedWith(directory string, indexesToRemove []int) error {
+func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) error {
+	projectRecordEntity, errGetProjectRecordFromFileWith := helper.GetProjectRecordFromFileWith(directory)
+	if errGetProjectRecordFromFileWith != nil {
+		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
+	}
+
+	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	if errGetDataFolder != nil {
+		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	}
+
+	todoList, errGetTodoFromDataFile := helper.GetTodoFromDataFile(dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName)
+	if errGetTodoFromDataFile != nil {
+		return fmt.Errorf("helper.GetTodoFromDataFile: %w", errGetTodoFromDataFile)
+	}
+
+	var newTodoList []entity.TodoEntity
+	for i, todo := range todoList {
+		_, shouldRemove := indexesToRemove[i]
+		if !shouldRemove {
+			continue
+		}
+		newTodoList = append(newTodoList, todo)
+	}
+
+	dataFileFullPath := dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName
+	if err := helper.WriteTodoToFile(dataFileFullPath, newTodoList); err != nil {
+		return fmt.Errorf("helper.WriteTodoToFile: %w", err)
+	}
+
 	return nil
 }
 
 func removeAllTodosAssociatedWith(directory string) error {
+	projectRecordEntity, errGetProjectRecordFromFileWith := helper.GetProjectRecordFromFileWith(directory)
+	if errGetProjectRecordFromFileWith != nil {
+		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
+	}
+
+	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	if errGetDataFolder != nil {
+		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	}
+
+	dataFileFullPath := dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName
+	if err := helper.WriteTodoToFile(dataFileFullPath, []entity.TodoEntity{}); err != nil {
+		return fmt.Errorf("helper.WriteTodoToFile: %w", err)
+	}
+
 	return nil
 }
 
 func removeRun(globalFlag, allFlag bool, args []string) error {
-	var indexesToRemove []int
+	indexesToRemove := make(map[int]bool)
+
 	for _, arg := range args {
 		i, errAtoi := strconv.Atoi(arg)
 		if errAtoi != nil {
 			return fmt.Errorf("strconv.Atoi: %w", errAtoi)
 		}
-		indexesToRemove = append(indexesToRemove, i)
+
+		indexesToRemove[i] = true
 	}
 
 	if globalFlag && allFlag {

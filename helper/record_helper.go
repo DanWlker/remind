@@ -79,7 +79,7 @@ func SetRecordFileContents(items []entity.ProjectRecordEntity) error {
 	return nil
 }
 
-func FindProjectRecordFromFileWith(homeRemovedFolderPath string) (entity.ProjectRecordEntity, error) {
+func GetProjectRecordFromFileWith(homeRemovedFolderPath string) (entity.ProjectRecordEntity, error) {
 	allRecords, errGetRecordFileContents := GetRecordFileContents()
 	if errGetRecordFileContents != nil {
 		return entity.ProjectRecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetRecordFileContents)

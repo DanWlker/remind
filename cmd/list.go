@@ -58,7 +58,7 @@ var listCmd = &cobra.Command{
 }
 
 func listOne(pathToFind string) error {
-	projectRecordEntity, errFindProjectRecordEntity := helper.FindProjectRecordFromFileWith(pathToFind)
+	projectRecordEntity, errFindProjectRecordEntity := helper.GetProjectRecordFromFileWith(pathToFind)
 	var errRecordDoesNotExist *r_error.RecordDoesNotExistError
 	if errors.As(errFindProjectRecordEntity, &errRecordDoesNotExist) {
 		recordIdentifier := errRecordDoesNotExist.RecordIdentifier

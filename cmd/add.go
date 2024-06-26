@@ -11,7 +11,6 @@ import (
 
 	"github.com/DanWlker/remind/entity"
 	"github.com/DanWlker/remind/helper"
-	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -91,13 +90,10 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		todoList = append(todoList, entity.TodoEntity{Text: item})
 	}
 
-	yamlTodoList, errMarshal := yaml.Marshal(todoList)
-	if errMarshal != nil {
-		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
+	errWriteTodoToFile := helper.WriteTodoToFile(dataFileFullPath, todoList)
+	if errWriteTodoToFile != nil {
+		return fmt.Errorf("helper.WriteTodoToFile: %w", errWriteTodoToFile)
 	}
-
-	os.WriteFile(dataFileFullPath, yamlTodoList, 0644)
-
 	return nil
 }
 
