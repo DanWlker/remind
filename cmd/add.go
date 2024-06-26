@@ -30,7 +30,11 @@ var addCmd = &cobra.Command{
 	Short: "Adds a todo with directory context",
 	Long:  "Adds a todo with directory context, by default it will associate the todo with the local directory. Use -g to bind it to the global $HOME todo list",
 	Run: func(cmd *cobra.Command, args []string) {
-		errAddRun := addRun(cmd, args)
+		globalFlag, errGetBool := cmd.Flags().GetBool(globalFlag_add.Name)
+		if errGetBool != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool))
+		}
+		errAddRun := addRun(globalFlag, args)
 		if errAddRun != nil {
 			cobra.CheckErr(fmt.Errorf("addRun: %w", errAddRun))
 		}
@@ -97,13 +101,8 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 	return nil
 }
 
-func addRun(cmd *cobra.Command, args []string) error {
-	shouldAddToGlobal, errGetBool := cmd.Flags().GetBool(globalFlag_add.Name)
-	if errGetBool != nil {
-		return fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool)
-	}
-
-	if shouldAddToGlobal {
+func addRun(globalFlag bool, args []string) error {
+	if globalFlag {
 		errAddTodoAndAssociateTo := addTodoAndAssociateTo("", args)
 		if errAddTodoAndAssociateTo != nil {
 			return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)

@@ -42,7 +42,16 @@ var listCmd = &cobra.Command{
 	Long: `Lists todos, by default it attempts to list todos associated to
 	this folder, use the -a flag to list all todos`,
 	Run: func(cmd *cobra.Command, args []string) {
-		errListRun := listRun(cmd, args)
+		allFlag, errGetBoolAllFlag := cmd.Flags().GetBool(allFlag_list.Name)
+		if errGetBoolAllFlag != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: errGetBoolAllFlag: %w", errGetBoolAllFlag))
+		}
+
+		globalFlag, errGetBoolGlobalFlag := cmd.Flags().GetBool(globalFlag_list.Name)
+		if errGetBoolGlobalFlag != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: errGetBoolGlobalFlag: %w", errGetBoolGlobalFlag))
+		}
+		errListRun := listRun(allFlag, globalFlag)
 		if errListRun != nil {
 			cobra.CheckErr(fmt.Errorf("listRun: %w", errListRun))
 		}
@@ -102,13 +111,9 @@ func listAll() error {
 	return nil
 }
 
-func listRun(cmd *cobra.Command, _ []string) error {
+func listRun(allFlag, globalFlag bool) error {
 	// Check should list all
-	shouldListAll, errGetBoolAllFlag := cmd.Flags().GetBool(allFlag_list.Name)
-	if errGetBoolAllFlag != nil {
-		return fmt.Errorf("cmd.Flags().GetBool: errGetBoolAllFlag: %w", errGetBoolAllFlag)
-	}
-	if shouldListAll {
+	if allFlag {
 		if errListAll := listAll(); errListAll != nil {
 			return fmt.Errorf("listAll: %w", errListAll)
 		}
@@ -116,12 +121,8 @@ func listRun(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Check should list global
-	shoulListGlobal, errGetBoolGlobalFlag := cmd.Flags().GetBool(globalFlag_list.Name)
-	if errGetBoolGlobalFlag != nil {
-		return fmt.Errorf("cmd.Flags().GetBool: errGetBoolGlobalFlag: %w", errGetBoolGlobalFlag)
-	}
 	var pathToFind string
-	if shoulListGlobal {
+	if globalFlag {
 		if errListOneGlobal := listOne(""); errListOneGlobal != nil {
 			return fmt.Errorf("listOne: shouldListGlobal: %w", errListOneGlobal)
 		}
