@@ -73,8 +73,7 @@ func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) er
 
 	var newTodoList []entity.TodoEntity
 	for i, todo := range todoList {
-		_, shouldRemove := indexesToRemove[i]
-		if !shouldRemove {
+		if _, shouldRemove := indexesToRemove[i]; shouldRemove {
 			continue
 		}
 		newTodoList = append(newTodoList, todo)
