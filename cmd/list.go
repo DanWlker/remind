@@ -120,7 +120,6 @@ func listRun(allFlag, globalFlag bool) error {
 	}
 
 	// Check should list global
-	var pathToFind string
 	if globalFlag {
 		if errListOneGlobal := listOne(""); errListOneGlobal != nil {
 			return fmt.Errorf("listOne: shouldListGlobal: %w", errListOneGlobal)
@@ -129,8 +128,7 @@ func listRun(allFlag, globalFlag bool) error {
 	}
 
 	// Attempt to get current directory and list reminders associated with it
-	var errGetHomeRemovedFilePath error
-	pathToFind, errGetHomeRemovedFilePath = helper.GetHomeRemovedCurrentProgramExecutionDirectory()
+	pathToFind, errGetHomeRemovedFilePath := helper.GetHomeRemovedCurrentProgramExecutionDirectory()
 	var filePathNotStartsWithHomeErr *r_error.FilePathNotStartsWithHome
 	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
 		log.Println(
