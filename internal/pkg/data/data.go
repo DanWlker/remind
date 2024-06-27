@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -55,14 +56,25 @@ func GetDataFolder() (string, error) {
 	return dataFolder, nil
 }
 
-func PrettyPrintDataFile(dataFileFullPath string, prefix string) error {
+func SPrettyPrintDataFile(dataFileFullPath string, prefix string) (string, error) {
+	var b bytes.Buffer
 	todoList, errGetTodoFromDataFile := GetTodoFromDataFile(dataFileFullPath)
 	if errGetTodoFromDataFile != nil {
-		return fmt.Errorf("GetTodoFromDataFile: %w", errGetTodoFromDataFile)
+		return "", fmt.Errorf("GetTodoFromDataFile: %w", errGetTodoFromDataFile)
 	}
 
 	for i, todo := range todoList {
-		fmt.Printf("%v%v. %v\n", prefix, i, todo.Text)
+		b.WriteString(fmt.Sprintf("%v%v. %v\n", prefix, i, todo.Text))
 	}
+
+	return b.String(), nil
+}
+
+func PrettyPrintDataFile(dataFileFullPath string, prefix string) error {
+	result, err := SPrettyPrintDataFile(dataFileFullPath, prefix)
+	if err != nil {
+		return fmt.Errorf("SPrettyPrintDataFile: %w", err)
+	}
+	fmt.Println(result)
 	return nil
 }

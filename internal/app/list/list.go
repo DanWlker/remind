@@ -37,6 +37,27 @@ func listOne(pathToFind string) error {
 	return nil
 }
 
+func listConcurrently(item record.RecordEntity, dataFolder string) (chan string, error) {
+	var c chan string = make(chan string)
+
+	var header string
+	if item.Path == "" {
+		header = "Global:\n"
+	} else {
+		header = item.Path + ":\n"
+	}
+
+	go func() {
+		result, errPrettyPrintDataFile := data.SPrettyPrintDataFile(dataFolder+string(os.PathSeparator)+item.DataFileName, "  ")
+		if errPrettyPrintDataFile != nil {
+			c <- fmt.Sprintf("Error: Something went wrong: data.SPrettyPrintDataFile: %v", errPrettyPrintDataFile)
+		}
+		c <- header + result
+	}()
+
+	return c, nil
+}
+
 func listAll() error {
 	items, errGetRecordFileContents := record.GetRecordFileContents()
 	if errGetRecordFileContents != nil {
@@ -48,18 +69,18 @@ func listAll() error {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
+	var channelList []chan string
 	for _, item := range items {
-		if item.Path == "" {
-			fmt.Println("Global:")
-		} else {
-			fmt.Println(item.Path + ":")
+		c, errlistConcurrently := listConcurrently(item, dataFolder)
+		if errlistConcurrently != nil {
+			log.Println("listConcurrently: %w", errlistConcurrently)
+			continue
 		}
+		channelList = append(channelList, c)
+	}
 
-		if errPrettyPrintDataFile := data.PrettyPrintDataFile(dataFolder+string(os.PathSeparator)+item.DataFileName, "  "); errPrettyPrintDataFile != nil {
-			return errPrettyPrintDataFile
-		}
-
-		fmt.Println("")
+	for _, channel := range channelList {
+		fmt.Println(<-channel)
 	}
 
 	return nil
