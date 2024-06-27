@@ -1,32 +1,31 @@
-package helper
+package data
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/DanWlker/remind/constant"
-	"github.com/DanWlker/remind/entity"
+	"github.com/DanWlker/remind/internal/config"
 	"github.com/goccy/go-yaml"
 	"github.com/spf13/viper"
 )
 
 // This does not create the file if it doesn't exist
-func GetTodoFromDataFile(dataFileFullPath string) ([]entity.TodoEntity, error) {
+func GetTodoFromDataFile(dataFileFullPath string) ([]TodoEntity, error) {
 	file, errReadFile := os.ReadFile(dataFileFullPath)
 	if errReadFile != nil {
-		return []entity.TodoEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
+		return []TodoEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
 	}
 
-	var items []entity.TodoEntity
+	var items []TodoEntity
 	if errUnmarshal := yaml.Unmarshal(file, &items); errUnmarshal != nil {
-		return []entity.TodoEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
+		return []TodoEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
 	}
 
 	return items, nil
 }
 
-func WriteTodoToFile(dataFileFullPath string, todoList []entity.TodoEntity) error {
+func WriteTodoToFile(dataFileFullPath string, todoList []TodoEntity) error {
 	yamlTodoList, errMarshal := yaml.Marshal(todoList)
 	if errMarshal != nil {
 		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
@@ -40,13 +39,13 @@ func WriteTodoToFile(dataFileFullPath string, todoList []entity.TodoEntity) erro
 }
 
 func GetDataFolder() (string, error) {
-	dataFolder := strings.TrimSpace(viper.GetString(constant.DATA_FOLDER_KEY))
+	dataFolder := strings.TrimSpace(viper.GetString(config.DATA_FOLDER_KEY))
 	if dataFolder == "" {
 		home, errHomeDir := os.UserHomeDir()
 		if errHomeDir != nil {
 			return "", fmt.Errorf("os.UserHomeDir: %w", errHomeDir)
 		}
-		dataFolder = home + constant.DEFAULT_DATA_PATH_AFTER_HOME
+		dataFolder = home + config.DEFAULT_DATA_PATH_AFTER_HOME
 	}
 
 	if errMkDirAll := os.MkdirAll(dataFolder, 0770); errMkDirAll != nil {

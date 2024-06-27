@@ -1,4 +1,4 @@
-package helper
+package shared
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	r_error "github.com/DanWlker/remind/error"
+	i_error "github.com/DanWlker/remind/internal/error"
 )
 
 func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
@@ -16,7 +16,7 @@ func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
 	}
 
 	if !strings.HasPrefix(filePathWithHome, home) {
-		return filePathWithHome, &r_error.FilePathNotStartsWithHome{
+		return filePathWithHome, &i_error.FilePathNotStartsWithHome{
 			HomeStr: home,
 			FileStr: filePathWithHome,
 		}

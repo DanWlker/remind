@@ -25,8 +25,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/DanWlker/remind/constant"
-	"github.com/DanWlker/remind/helper"
+	"github.com/DanWlker/remind/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -54,14 +53,14 @@ func init() {
 }
 
 func initConfig() {
-	configFolder, errGetConfigFolder := helper.GetConfigFolder()
+	configFolder, errGetConfigFolder := config.GetConfigFolder()
 	if errGetConfigFolder != nil {
 		cobra.CheckErr(fmt.Errorf("roomCmd: initConfig: helper.GetConfigFolder: %w", errGetConfigFolder))
 	}
 
 	viper.AddConfigPath(configFolder)
-	viper.SetConfigType(constant.DEFAULT_CONFIG_FILE_TYPE)
-	viper.SetConfigName(constant.DEFAULT_CONFIG_FILE_NAME)
+	viper.SetConfigType(config.DEFAULT_CONFIG_FILE_TYPE)
+	viper.SetConfigName(config.DEFAULT_CONFIG_FILE_NAME)
 
 	viper.AutomaticEnv()
 

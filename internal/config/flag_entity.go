@@ -1,4 +1,4 @@
-package entity
+package config
 
 type FlagEntity struct {
 	Name      string

@@ -8,13 +8,16 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/DanWlker/remind/entity"
-	"github.com/DanWlker/remind/helper"
+	"github.com/DanWlker/remind/internal/config"
 	"github.com/spf13/cobra"
+
+	"github.com/DanWlker/remind/internal/pkg/data"
+	"github.com/DanWlker/remind/internal/pkg/record"
+	"github.com/DanWlker/remind/internal/pkg/shared"
 )
 
-var globalFlag_remove = entity.BoolFlagEntity{
-	FlagEntity: entity.FlagEntity{
+var globalFlag_remove = config.BoolFlagEntity{
+	FlagEntity: config.FlagEntity{
 		Name:      "global",
 		Shorthand: "g",
 		Usage:     "Removes the todos in the global list",
@@ -22,8 +25,8 @@ var globalFlag_remove = entity.BoolFlagEntity{
 	Value: false,
 }
 
-var allFlag_remove = entity.BoolFlagEntity{
-	FlagEntity: entity.FlagEntity{
+var allFlag_remove = config.BoolFlagEntity{
+	FlagEntity: config.FlagEntity{
 		Name:      "all",
 		Shorthand: "a",
 		Usage:     "Removes all the todos for the chosen directory. By default the chosen directory is the local directory, use -g to switch to remove from the global list",
@@ -56,22 +59,22 @@ var removeCmd = &cobra.Command{
 }
 
 func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) error {
-	projectRecordEntity, errGetProjectRecordFromFileWith := helper.GetProjectRecordFromFileWith(directory)
+	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetProjectRecordFromFileWith(directory)
 	if errGetProjectRecordFromFileWith != nil {
 		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
 	}
 
-	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetDataFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
-	todoList, errGetTodoFromDataFile := helper.GetTodoFromDataFile(dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName)
+	todoList, errGetTodoFromDataFile := data.GetTodoFromDataFile(dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName)
 	if errGetTodoFromDataFile != nil {
 		return fmt.Errorf("helper.GetTodoFromDataFile: %w", errGetTodoFromDataFile)
 	}
 
-	var newTodoList []entity.TodoEntity
+	var newTodoList []data.TodoEntity
 	for i, todo := range todoList {
 		if _, shouldRemove := indexesToRemove[i]; shouldRemove {
 			continue
@@ -80,7 +83,7 @@ func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) er
 	}
 
 	dataFileFullPath := dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName
-	if err := helper.WriteTodoToFile(dataFileFullPath, newTodoList); err != nil {
+	if err := data.WriteTodoToFile(dataFileFullPath, newTodoList); err != nil {
 		return fmt.Errorf("helper.WriteTodoToFile: %w", err)
 	}
 
@@ -88,18 +91,18 @@ func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) er
 }
 
 func removeAllTodosAssociatedWith(directory string) error {
-	projectRecordEntity, errGetProjectRecordFromFileWith := helper.GetProjectRecordFromFileWith(directory)
+	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetProjectRecordFromFileWith(directory)
 	if errGetProjectRecordFromFileWith != nil {
 		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
 	}
 
-	dataFolder, errGetDataFolder := helper.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetDataFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
 	dataFileFullPath := dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName
-	if err := helper.WriteTodoToFile(dataFileFullPath, []entity.TodoEntity{}); err != nil {
+	if err := data.WriteTodoToFile(dataFileFullPath, []data.TodoEntity{}); err != nil {
 		return fmt.Errorf("helper.WriteTodoToFile: %w", err)
 	}
 
@@ -132,7 +135,7 @@ func removeRun(globalFlag, allFlag bool, args []string) error {
 		return nil
 	}
 
-	homeRemovedProgramDir, errGetHomeRemProExDir := helper.GetHomeRemovedCurrentProgramExecutionDirectory()
+	homeRemovedProgramDir, errGetHomeRemProExDir := shared.GetHomeRemovedCurrentProgramExecutionDirectory()
 	if errGetHomeRemProExDir != nil {
 		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errGetHomeRemProExDir)
 	}

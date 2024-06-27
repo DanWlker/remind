@@ -1,4 +1,4 @@
-package constant
+package config
 
 import (
 	"os"

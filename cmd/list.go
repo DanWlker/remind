@@ -4,19 +4,15 @@ Copyright © 2024 DanWlker
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"log"
-	"os"
 
-	"github.com/DanWlker/remind/entity"
-	r_error "github.com/DanWlker/remind/error"
-	"github.com/DanWlker/remind/helper"
+	"github.com/DanWlker/remind/internal/app/list"
+	"github.com/DanWlker/remind/internal/config"
 	"github.com/spf13/cobra"
 )
 
-var allFlag_list = entity.BoolFlagEntity{
-	FlagEntity: entity.FlagEntity{
+var allFlag_list = config.BoolFlagEntity{
+	FlagEntity: config.FlagEntity{
 		Name:      "all",
 		Shorthand: "a",
 		Usage:     "List all available todos",
@@ -24,8 +20,8 @@ var allFlag_list = entity.BoolFlagEntity{
 	Value: false,
 }
 
-var globalFlag_list = entity.BoolFlagEntity{
-	FlagEntity: entity.FlagEntity{
+var globalFlag_list = config.BoolFlagEntity{
+	FlagEntity: config.FlagEntity{
 		Name:      "global",
 		Shorthand: "g",
 		Usage:     "List global todos",
@@ -50,97 +46,11 @@ var listCmd = &cobra.Command{
 		if errGetBoolGlobalFlag != nil {
 			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: errGetBoolGlobalFlag: %w", errGetBoolGlobalFlag))
 		}
-		errListRun := listRun(allFlag, globalFlag)
+		errListRun := list.ListRun(allFlag, globalFlag)
 		if errListRun != nil {
 			cobra.CheckErr(fmt.Errorf("listRun: %w", errListRun))
 		}
 	},
-}
-
-func listOne(pathToFind string) error {
-	projectRecordEntity, errFindProjectRecordEntity := helper.GetProjectRecordFromFileWith(pathToFind)
-	var errRecordDoesNotExist *r_error.RecordDoesNotExistError
-	if errors.As(errFindProjectRecordEntity, &errRecordDoesNotExist) {
-		recordIdentifier := errRecordDoesNotExist.RecordIdentifier
-		if recordIdentifier == "" {
-			recordIdentifier = "$HOME"
-		}
-		fmt.Println("No record linked to this folder found: " + recordIdentifier)
-		return nil
-	} else if errFindProjectRecordEntity != nil {
-		return fmt.Errorf("helper.FindProjectRecordFromFileWith: %w", errFindProjectRecordEntity)
-	}
-
-	dataFolder, errGetDataFolder := helper.GetDataFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-	}
-
-	if errPrettyPrintFile := helper.PrettyPrintDataFile(dataFolder+string(os.PathSeparator)+projectRecordEntity.DataFileName, "  "); errPrettyPrintFile != nil {
-		return fmt.Errorf("helper.PrettyPrintDataFile: %w", errPrettyPrintFile)
-	}
-	return nil
-}
-
-func listAll() error {
-	items, errGetRecordFileContents := helper.GetRecordFileContents()
-	if errGetRecordFileContents != nil {
-		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
-	}
-
-	dataFolder, errGetDataFolder := helper.GetDataFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-	}
-
-	for _, item := range items {
-		if item.Path == "" {
-			fmt.Println("Global:")
-		} else {
-			fmt.Println(item.Path + ":")
-		}
-
-		if errPrettyPrintDataFile := helper.PrettyPrintDataFile(dataFolder+string(os.PathSeparator)+item.DataFileName, "  "); errPrettyPrintDataFile != nil {
-			return errPrettyPrintDataFile
-		}
-
-		fmt.Println("")
-	}
-
-	return nil
-}
-
-func listRun(allFlag, globalFlag bool) error {
-	// Check should list all
-	if allFlag {
-		if errListAll := listAll(); errListAll != nil {
-			return fmt.Errorf("listAll: %w", errListAll)
-		}
-		return nil
-	}
-
-	// Check should list global
-	if globalFlag {
-		if errListOneGlobal := listOne(""); errListOneGlobal != nil {
-			return fmt.Errorf("listOne: shouldListGlobal: %w", errListOneGlobal)
-		}
-		return nil
-	}
-
-	// Attempt to get current directory and list reminders associated with it
-	pathToFind, errGetHomeRemovedFilePath := helper.GetHomeRemovedCurrentProgramExecutionDirectory()
-	var filePathNotStartsWithHomeErr *r_error.FilePathNotStartsWithHome
-	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
-		log.Println(
-			filePathNotStartsWithHomeErr.Error(),
-		)
-	} else if errGetHomeRemovedFilePath != nil {
-		return fmt.Errorf("helper.GetHomeRemovedFilePath: %w", errGetHomeRemovedFilePath)
-	}
-	if errListOneLocal := listOne(pathToFind); errListOneLocal != nil {
-		return fmt.Errorf("listOne: %v: %w", pathToFind, errListOneLocal)
-	}
-	return nil
 }
 
 func init() {

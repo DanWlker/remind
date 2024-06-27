@@ -1,4 +1,4 @@
-package helper
+package record
 
 import (
 	"errors"
@@ -6,19 +6,20 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/DanWlker/remind/constant"
-	"github.com/DanWlker/remind/entity"
-	r_error "github.com/DanWlker/remind/error"
+	i_error "github.com/DanWlker/remind/internal/error"
+	"github.com/DanWlker/remind/internal/pkg/data"
+
+	"github.com/DanWlker/remind/internal/config"
 	"github.com/goccy/go-yaml"
 )
 
 func GetRecordFile() (string, error) {
-	dataFolder, errGetDataFolder := GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetDataFolder()
 	if errGetDataFolder != nil {
 		return "", fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
-	defaultDataRecordFileFullPath := dataFolder + constant.DEFAULT_DATA_RECORD_FULL_FILE_NAME
+	defaultDataRecordFileFullPath := dataFolder + config.DEFAULT_DATA_RECORD_FULL_FILE_NAME
 
 	if _, errStat := os.Stat(defaultDataRecordFileFullPath); errors.Is(errStat, os.ErrNotExist) {
 		_, errCreate := os.Create(defaultDataRecordFileFullPath)
@@ -30,7 +31,7 @@ func GetRecordFile() (string, error) {
 			return "", fmt.Errorf("CreateNewRecord: %w", errCreateNewRecord)
 		}
 
-		if err := SetRecordFileContents([]entity.ProjectRecordEntity{globalRecordEntity}); err != nil {
+		if err := SetRecordFileContents([]RecordEntity{globalRecordEntity}); err != nil {
 			return "", fmt.Errorf("SetRecordFileContents: %w", err)
 		}
 	} else if errStat != nil {
@@ -40,27 +41,27 @@ func GetRecordFile() (string, error) {
 	return defaultDataRecordFileFullPath, nil
 }
 
-func GetRecordFileContents() ([]entity.ProjectRecordEntity, error) {
+func GetRecordFileContents() ([]RecordEntity, error) {
 	recordFileString, errGetRecordFile := GetRecordFile()
 	if errGetRecordFile != nil {
-		return []entity.ProjectRecordEntity{}, fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
+		return []RecordEntity{}, fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
 	}
 
 	recordFile, errReadFile := os.ReadFile(recordFileString)
 	if errReadFile != nil {
-		return []entity.ProjectRecordEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
+		return []RecordEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
 	}
 
-	var items []entity.ProjectRecordEntity
+	var items []RecordEntity
 	if errUnmarshal := yaml.Unmarshal(recordFile, &items); errUnmarshal != nil {
-		return []entity.ProjectRecordEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
+		return []RecordEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
 	}
 
 	return items, nil
 
 }
 
-func SetRecordFileContents(items []entity.ProjectRecordEntity) error {
+func SetRecordFileContents(items []RecordEntity) error {
 	recordFileString, errGetRecordFile := GetRecordFile()
 	if errGetRecordFile != nil {
 		return fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
@@ -79,10 +80,10 @@ func SetRecordFileContents(items []entity.ProjectRecordEntity) error {
 	return nil
 }
 
-func GetProjectRecordFromFileWith(homeRemovedFolderPath string) (entity.ProjectRecordEntity, error) {
+func GetProjectRecordFromFileWith(homeRemovedFolderPath string) (RecordEntity, error) {
 	allRecords, errGetRecordFileContents := GetRecordFileContents()
 	if errGetRecordFileContents != nil {
-		return entity.ProjectRecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetRecordFileContents)
+		return RecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetRecordFileContents)
 	}
 
 	for _, record := range allRecords {
@@ -91,23 +92,23 @@ func GetProjectRecordFromFileWith(homeRemovedFolderPath string) (entity.ProjectR
 		}
 	}
 
-	return entity.ProjectRecordEntity{}, &r_error.RecordDoesNotExistError{
+	return RecordEntity{}, &i_error.RecordDoesNotExistError{
 		RecordIdentifier: homeRemovedFolderPath,
 	}
 }
-func CreateNewRecord(pathIdentifier string) (entity.ProjectRecordEntity, error) {
-	dataFolder, errGetDataFolder := GetDataFolder()
+func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
+	dataFolder, errGetDataFolder := data.GetDataFolder()
 	if errGetDataFolder != nil {
-		return entity.ProjectRecordEntity{}, fmt.Errorf("GetDataFolder: %w", errGetDataFolder)
+		return RecordEntity{}, fmt.Errorf("GetDataFolder: %w", errGetDataFolder)
 	}
 
-	newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+constant.DEFAULT_DATA_FILE_EXTENSION)
+	newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+config.DEFAULT_DATA_FILE_EXTENSION)
 	if errCreateTemp != nil {
-		return entity.ProjectRecordEntity{}, fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
+		return RecordEntity{}, fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
 	}
 
 	_, fileName := filepath.Split(newFile.Name())
-	currentDirectoryRecord := entity.ProjectRecordEntity{
+	currentDirectoryRecord := RecordEntity{
 		DataFileName: fileName,
 		Path:         pathIdentifier,
 	}

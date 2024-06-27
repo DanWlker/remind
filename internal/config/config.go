@@ -1,10 +1,8 @@
-package helper
+package config
 
 import (
 	"fmt"
 	"os"
-
-	"github.com/DanWlker/remind/constant"
 )
 
 func GetConfigFolder() (string, error) {
@@ -15,7 +13,7 @@ func GetConfigFolder() (string, error) {
 	if errHomeDir != nil {
 		return "", fmt.Errorf("os.UserHomeDir: %w", errHomeDir)
 	}
-	configFolder := home + constant.DEFAULT_CONFIG_PATH_AFTER_HOME
+	configFolder := home + DEFAULT_CONFIG_PATH_AFTER_HOME
 
 	if errMkDirAll := os.MkdirAll(configFolder, 0770); errMkDirAll != nil {
 		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
