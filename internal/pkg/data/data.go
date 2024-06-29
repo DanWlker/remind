@@ -40,7 +40,7 @@ func WriteTodoToFile(dataFileFullPath string, todoList []TodoEntity) error {
 }
 
 func GetDataFolder() (string, error) {
-	dataFolder := strings.TrimSpace(viper.GetString(config.DATA_FOLDER_KEY))
+	dataFolder := strings.TrimSpace(viper.GetString(config.USER_DEFINED_DATA_FOLDER))
 	if dataFolder == "" {
 		home, errHomeDir := os.UserHomeDir()
 		if errHomeDir != nil {

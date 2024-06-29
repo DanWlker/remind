@@ -44,7 +44,7 @@ func editTodoAssociatedWith(directory string) error {
 	}
 
 	var todoList []data.TodoEntity
-	for _, item := range strings.Split(string(result), "\n") {
+	for _, item := range strings.Split(strings.ReplaceAll(string(result), "\r\n", "\n"), "\n") {
 		if item != "" {
 			todoList = append(todoList, data.TodoEntity{Text: item})
 		}
