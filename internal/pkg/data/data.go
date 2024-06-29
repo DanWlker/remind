@@ -56,6 +56,7 @@ func GetDataFolder() (string, error) {
 	return dataFolder, nil
 }
 
+// TODO: Change prefix to be a func
 func SPrettyPrintDataFile(dataFileFullPath string, prefix string) (string, error) {
 	var b bytes.Buffer
 	todoList, errGetTodoFromDataFile := GetTodoFromDataFile(dataFileFullPath)

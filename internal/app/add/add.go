@@ -67,17 +67,15 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
 	_, errStat := os.Stat(dataFileFullPath)
 
-	var todoList []data.TodoEntity
-	if errStat == nil {
-		var errReadFromFile error
-		todoList, errReadFromFile = data.GetTodoFromDataFile(dataFileFullPath)
-		if errReadFromFile != nil {
-			return fmt.Errorf("helper.ReadFromFile: %w", errReadFromFile)
-		}
-	} else if errors.Is(errStat, os.ErrNotExist) {
+	if errors.Is(errStat, os.ErrNotExist) {
 		return fmt.Errorf("You fcked up, os.Stat: %w", errStat) // This should never occur
-	} else {
+	} else if errStat != nil {
 		return fmt.Errorf("os.Stat: %w", errStat)
+	}
+
+	todoList, errReadFromFile := data.GetTodoFromDataFile(dataFileFullPath)
+	if errReadFromFile != nil {
+		return fmt.Errorf("helper.ReadFromFile: %w", errReadFromFile)
 	}
 
 	for _, item := range todoListString {
