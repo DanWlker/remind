@@ -9,8 +9,8 @@ import (
 	i_error "github.com/DanWlker/remind/internal/error"
 )
 
-func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
-	home, errUserHomeDir := os.UserHomeDir()
+func FormatPathToRemoveHome(filePathWithHome string, userHomeDir func() (string, error)) (string, error) {
+	home, errUserHomeDir := userHomeDir()
 	if errUserHomeDir != nil {
 		return "", fmt.Errorf("os.UserHomeDir: %w", errUserHomeDir)
 	}
@@ -40,7 +40,7 @@ func GetHomeRemovedCurrentProgramExecutionDirectory() (string, error) {
 		return "", fmt.Errorf("GetCurrentProgramExecutionDirectory: %w", errGetCurrProExDir)
 	}
 
-	path, errFormatPathToRemoveHome := FormatPathToRemoveHome(currProExDir)
+	path, errFormatPathToRemoveHome := FormatPathToRemoveHome(currProExDir, os.UserHomeDir)
 	if errFormatPathToRemoveHome != nil {
 		return "", fmt.Errorf("FormatPathToRemoveHome: %w", errFormatPathToRemoveHome)
 	}
