@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 
 	r_error "github.com/DanWlker/remind/internal/error"
 	"github.com/DanWlker/remind/internal/pkg/data"
@@ -32,7 +33,7 @@ func editTodoAssociatedWith(directory string) error {
 
 	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
 
-	prettyPrintedString, errSPrettyPrintDataFile := data.SPrettyPrintDataFile(dataFileFullPath, "")
+	prettyPrintedString, errSPrettyPrintDataFile := data.SPrettyPrintDataFile(dataFileFullPath, nil)
 	if errSPrettyPrintDataFile != nil {
 		return fmt.Errorf("data.SPrettyPrintDataFile: %w", errSPrettyPrintDataFile)
 	}
@@ -42,7 +43,17 @@ func editTodoAssociatedWith(directory string) error {
 		return fmt.Errorf("shared.OpenDefaultEditor: %w", errOpenDefaultEditor)
 	}
 
-	fmt.Println(result)
+	var todoList []data.TodoEntity
+	for _, item := range strings.Split(string(result), "\n") {
+		if item != "" {
+			todoList = append(todoList, data.TodoEntity{Text: item})
+		}
+	}
+
+	errWriteTodoToFile := data.WriteTodoToFile(dataFileFullPath, todoList)
+	if errWriteTodoToFile != nil {
+		return fmt.Errorf("helper.WriteTodoToFile: %w", errWriteTodoToFile)
+	}
 
 	return nil
 }

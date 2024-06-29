@@ -56,8 +56,7 @@ func GetDataFolder() (string, error) {
 	return dataFolder, nil
 }
 
-// TODO: Change prefix to be a func
-func SPrettyPrintDataFile(dataFileFullPath string, prefix string) (string, error) {
+func SPrettyPrintDataFile(dataFileFullPath string, editText func(todo string, index int) string) (string, error) {
 	var b bytes.Buffer
 	todoList, errGetTodoFromDataFile := GetTodoFromDataFile(dataFileFullPath)
 	if errGetTodoFromDataFile != nil {
@@ -65,14 +64,19 @@ func SPrettyPrintDataFile(dataFileFullPath string, prefix string) (string, error
 	}
 
 	for i, todo := range todoList {
-		b.WriteString(fmt.Sprintf("%v%v. %v\n", prefix, i, todo.Text))
+		if editText == nil {
+			b.WriteString(todo.Text)
+		} else {
+			b.WriteString(editText(todo.Text, i))
+		}
+		b.WriteString("\n")
 	}
 
 	return b.String(), nil
 }
 
-func PrettyPrintDataFile(dataFileFullPath string, prefix string) error {
-	result, err := SPrettyPrintDataFile(dataFileFullPath, prefix)
+func PrettyPrintDataFile(dataFileFullPath string, editText func(todo string, index int) string) error {
+	result, err := SPrettyPrintDataFile(dataFileFullPath, editText)
 	if err != nil {
 		return fmt.Errorf("SPrettyPrintDataFile: %w", err)
 	}

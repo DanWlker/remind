@@ -31,7 +31,11 @@ func listOne(pathToFind string) error {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
-	if errPrettyPrintFile := data.PrettyPrintDataFile(dataFolder+string(os.PathSeparator)+projectRecordEntity.DataFileName, "  "); errPrettyPrintFile != nil {
+	if errPrettyPrintFile := data.PrettyPrintDataFile(
+		dataFolder+string(os.PathSeparator)+projectRecordEntity.DataFileName,
+		func(todo string, index int) string {
+			return fmt.Sprintf("\t%v. %v", index, todo)
+		}); errPrettyPrintFile != nil {
 		return fmt.Errorf("helper.PrettyPrintDataFile: %w", errPrettyPrintFile)
 	}
 	return nil
@@ -48,7 +52,12 @@ func listConcurrently(item record.RecordEntity, dataFolder string) (chan string,
 	}
 
 	go func() {
-		result, errPrettyPrintDataFile := data.SPrettyPrintDataFile(dataFolder+string(os.PathSeparator)+item.DataFileName, "  ")
+		result, errPrettyPrintDataFile := data.SPrettyPrintDataFile(
+			dataFolder+string(os.PathSeparator)+item.DataFileName,
+			func(todo string, index int) string {
+				return fmt.Sprintf("\t%v. %v", index, todo)
+			},
+		)
 		if errPrettyPrintDataFile != nil {
 			c <- fmt.Sprintf("Error: Something went wrong: data.SPrettyPrintDataFile: %v", errPrettyPrintDataFile)
 		}
