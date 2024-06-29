@@ -96,6 +96,7 @@ func GetProjectRecordFromFileWith(homeRemovedFolderPath string) (RecordEntity, e
 		RecordIdentifier: homeRemovedFolderPath,
 	}
 }
+
 func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
 	dataFolder, errGetDataFolder := data.GetDataFolder()
 	if errGetDataFolder != nil {
