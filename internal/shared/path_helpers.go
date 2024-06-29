@@ -17,14 +17,21 @@ func FormatRemoveHome(filePathWithHome string) (string, error) {
 
 	rel, err := filepath.Rel(home, filePathWithHome)
 	if err != nil {
-		return "", fmt.Errorf("filepath.Rel: computing relative path from %s to %s: %w", home, filePathWithHome, err)
+		return filePathWithHome, fmt.Errorf("filepath.Rel: %w",
+			i_error.NotUnderHomeError{
+				Home: home,
+				File: filePathWithHome,
+			},
+		)
 	}
 
-	if !strings.HasPrefix(rel, "../") {
-		return "", i_error.NotUnderHomeError{
-			Home: home,
-			File: filePathWithHome,
-		}
+	if strings.HasPrefix(rel, "../") {
+		return filePathWithHome, fmt.Errorf("strings.HasPrefix: %w",
+			i_error.NotUnderHomeError{
+				Home: home,
+				File: filePathWithHome,
+			},
+		)
 	}
 
 	return rel, nil
