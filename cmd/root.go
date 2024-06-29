@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 	Use:   "remind",
 	Short: "Remind is a project aware todo app",
 	Long: `Remind is a project aware todo app that will show relevant todos
-	for depending on the project folder. It also stores all notes in
+	depending on the project folder. It also stores all notes in
 	$HOME/remind/ to allow for easy syncing`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:

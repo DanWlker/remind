@@ -25,7 +25,8 @@ var editCmd = &cobra.Command{
 	Use:     "edit",
 	Aliases: []string{"ed"},
 	Short:   "Edits todos",
-	Long:    "Edits todos, by default it will let you to edit todos associated to this folder, use the -g flag to edit the global todo",
+	Long: `Edits todos, by default it will let you to edit todos associated
+	to this folder, use the -g flag to edit the global todo`,
 	Run: func(cmd *cobra.Command, args []string) {
 		globalFlag, errGetBool_global := cmd.Flags().GetBool(globalFlag_edit.Name)
 		if errGetBool_global != nil {

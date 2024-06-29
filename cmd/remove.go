@@ -29,7 +29,9 @@ var allFlag_remove = config.BoolFlagEntity{
 	FlagEntity: config.FlagEntity{
 		Name:      "all",
 		Shorthand: "a",
-		Usage:     "Removes all the todos for the chosen directory. By default the chosen directory is the local directory, use -g to switch to remove from the global list",
+		Usage: `Removes all the todos for the chosen directory. By
+		default the chosen directory is the local directory, use -g to
+		remove from the global list`,
 	},
 	Value: false,
 }
@@ -39,7 +41,9 @@ var removeCmd = &cobra.Command{
 	Use:     "remove",
 	Aliases: []string{"rm"},
 	Short:   "Removes todos with directory context",
-	Long:    "Removes todos with directory context, by default it will attempt to remove todos associated with the local directory. Use -g to refer to the global $HOME todo list",
+	Long: `Removes todos with directory context, by default it will attempt
+	to remove todos associated with the local directory. Use -g to refer to
+	the global $HOME todo list`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		globalFlag, errGetBool_global := cmd.Flags().GetBool(globalFlag_remove.Name)

@@ -24,7 +24,9 @@ var globalFlag_add = config.BoolFlagEntity{
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Adds a todo with directory context",
-	Long:  "Adds a todo with directory context, by default it will associate the todo with the local directory. Use -g to bind it to the global $HOME todo list",
+	Long: `Adds a todo with directory context, by default it will
+	associate the todo with the local directory. Use -g to bind it to the
+	global $HOME todo list`,
 	Run: func(cmd *cobra.Command, args []string) {
 		globalFlag, errGetBool := cmd.Flags().GetBool(globalFlag_add.Name)
 		if errGetBool != nil {
