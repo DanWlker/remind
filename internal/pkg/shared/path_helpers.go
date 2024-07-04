@@ -3,7 +3,6 @@ package shared
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	i_error "github.com/DanWlker/remind/internal/error"
@@ -26,12 +25,12 @@ func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
 }
 
 func GetCurrentProgramExecutionDirectory() (string, error) {
-	ex, errExecutable := os.Executable()
+	ex, errExecutable := os.Getwd()
 	if errExecutable != nil {
 		return "", fmt.Errorf("os.Executable: %w", errExecutable)
 	}
 
-	return filepath.Dir(ex), nil
+	return ex, nil
 }
 
 func GetHomeRemovedCurrentProgramExecutionDirectory() (string, error) {
