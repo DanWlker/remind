@@ -6,9 +6,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/DanWlker/remind/internal/app/list"
 	"github.com/DanWlker/remind/internal/config"
-	"github.com/spf13/cobra"
 )
 
 var allFlag_list = config.BoolFlagEntity{

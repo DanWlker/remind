@@ -25,9 +25,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/DanWlker/remind/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/DanWlker/remind/internal/config"
 )
 
 var rootCmd = &cobra.Command{

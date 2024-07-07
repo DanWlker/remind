@@ -8,9 +8,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/DanWlker/remind/internal/config"
 	"github.com/spf13/cobra"
 
+	"github.com/DanWlker/remind/internal/config"
 	"github.com/DanWlker/remind/internal/pkg/data"
 	"github.com/DanWlker/remind/internal/pkg/record"
 	"github.com/DanWlker/remind/internal/pkg/shared"

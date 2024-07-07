@@ -6,9 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/DanWlker/remind/internal/config"
 	"github.com/goccy/go-yaml"
 	"github.com/spf13/viper"
+
+	"github.com/DanWlker/remind/internal/config"
 )
 
 // This does not create the file if it doesn't exist

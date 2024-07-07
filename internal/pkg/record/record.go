@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	i_error "github.com/DanWlker/remind/internal/error"
-	"github.com/DanWlker/remind/internal/pkg/data"
+	"github.com/goccy/go-yaml"
 
 	"github.com/DanWlker/remind/internal/config"
-	"github.com/goccy/go-yaml"
+	i_error "github.com/DanWlker/remind/internal/error"
+	"github.com/DanWlker/remind/internal/pkg/data"
 )
 
 func GetFile() (string, error) {
@@ -58,7 +58,6 @@ func GetFileContents() ([]RecordEntity, error) {
 	}
 
 	return items, nil
-
 }
 
 func SetFileContents(items []RecordEntity) error {
@@ -72,7 +71,7 @@ func SetFileContents(items []RecordEntity) error {
 		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
 	}
 
-	errWriteFile := os.WriteFile(recordFileString, yamlContent, 0644)
+	errWriteFile := os.WriteFile(recordFileString, yamlContent, 0o644)
 	if errWriteFile != nil {
 		return fmt.Errorf("os.WriteFile: %w", errWriteFile)
 	}
