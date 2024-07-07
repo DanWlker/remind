@@ -13,7 +13,7 @@ import (
 )
 
 func editTodoAssociatedWith(directory string) error {
-	recordItems, errGetRecordFileContents := record.GetRecordFileContents()
+	recordItems, errGetRecordFileContents := record.GetFileContents()
 	if errGetRecordFileContents != nil {
 		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
 	}
@@ -26,14 +26,14 @@ func editTodoAssociatedWith(directory string) error {
 	}
 	currentDirectoryRecord := &recordItems[idx]
 
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
 	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
 
-	prettyPrintedString, errSPrettyPrintDataFile := data.SPrettyPrintDataFile(dataFileFullPath, nil)
+	prettyPrintedString, errSPrettyPrintDataFile := data.SPrettyPrintFile(dataFileFullPath, nil)
 	if errSPrettyPrintDataFile != nil {
 		return fmt.Errorf("data.SPrettyPrintDataFile: %w", errSPrettyPrintDataFile)
 	}
@@ -67,7 +67,7 @@ func EditRun(globalFlag bool) error {
 		return nil
 	}
 
-	homeRemCurrProExDir, errHomeRemCurrProExDir := shared.GetHomeRemovedCurrentProgramExecutionDirectory()
+	homeRemCurrProExDir, errHomeRemCurrProExDir := shared.GetHomeRemovedWorkingDir()
 	if errHomeRemCurrProExDir != nil {
 		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errHomeRemCurrProExDir)
 	}

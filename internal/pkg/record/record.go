@@ -13,8 +13,8 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func GetRecordFile() (string, error) {
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+func GetFile() (string, error) {
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return "", fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
@@ -31,7 +31,7 @@ func GetRecordFile() (string, error) {
 			return "", fmt.Errorf("CreateNewRecord: %w", errCreateNewRecord)
 		}
 
-		if err := SetRecordFileContents([]RecordEntity{globalRecordEntity}); err != nil {
+		if err := SetFileContents([]RecordEntity{globalRecordEntity}); err != nil {
 			return "", fmt.Errorf("SetRecordFileContents: %w", err)
 		}
 	} else if errStat != nil {
@@ -41,8 +41,8 @@ func GetRecordFile() (string, error) {
 	return defaultDataRecordFileFullPath, nil
 }
 
-func GetRecordFileContents() ([]RecordEntity, error) {
-	recordFileString, errGetRecordFile := GetRecordFile()
+func GetFileContents() ([]RecordEntity, error) {
+	recordFileString, errGetRecordFile := GetFile()
 	if errGetRecordFile != nil {
 		return []RecordEntity{}, fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
 	}
@@ -61,8 +61,8 @@ func GetRecordFileContents() ([]RecordEntity, error) {
 
 }
 
-func SetRecordFileContents(items []RecordEntity) error {
-	recordFileString, errGetRecordFile := GetRecordFile()
+func SetFileContents(items []RecordEntity) error {
+	recordFileString, errGetRecordFile := GetFile()
 	if errGetRecordFile != nil {
 		return fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
 	}
@@ -80,25 +80,25 @@ func SetRecordFileContents(items []RecordEntity) error {
 	return nil
 }
 
-func GetProjectRecordFromFileWith(homeRemovedFolderPath string) (RecordEntity, error) {
-	allRecords, errGetRecordFileContents := GetRecordFileContents()
-	if errGetRecordFileContents != nil {
-		return RecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetRecordFileContents)
+func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error) {
+	allRecords, errGetFileContents := GetFileContents()
+	if errGetFileContents != nil {
+		return RecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetFileContents)
 	}
 
 	for _, record := range allRecords {
-		if record.Path == homeRemovedFolderPath {
+		if record.Path == homeRemovedPath {
 			return record, nil
 		}
 	}
 
 	return RecordEntity{}, &i_error.RecordDoesNotExistError{
-		RecordIdentifier: homeRemovedFolderPath,
+		RecordIdentifier: homeRemovedPath,
 	}
 }
 
 func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return RecordEntity{}, fmt.Errorf("GetDataFolder: %w", errGetDataFolder)
 	}

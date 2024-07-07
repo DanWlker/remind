@@ -13,7 +13,7 @@ import (
 )
 
 func listOne(pathToFind string) error {
-	projectRecordEntity, errFindProjectRecordEntity := record.GetProjectRecordFromFileWith(pathToFind)
+	projectRecordEntity, errFindProjectRecordEntity := record.GetRecordEntityWithIdentifier(pathToFind)
 	var errRecordDoesNotExist *i_error.RecordDoesNotExistError
 	if errors.As(errFindProjectRecordEntity, &errRecordDoesNotExist) {
 		recordIdentifier := errRecordDoesNotExist.RecordIdentifier
@@ -26,12 +26,12 @@ func listOne(pathToFind string) error {
 		return fmt.Errorf("helper.FindProjectRecordFromFileWith: %w", errFindProjectRecordEntity)
 	}
 
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
-	if errPrettyPrintFile := data.PrettyPrintDataFile(
+	if errPrettyPrintFile := data.PrettyPrintFile(
 		dataFolder+string(os.PathSeparator)+projectRecordEntity.DataFileName,
 		func(todo string, index int) string {
 			return fmt.Sprintf("\t%v. %v", index, todo)
@@ -52,7 +52,7 @@ func listConcurrently(item record.RecordEntity, dataFolder string) (chan string,
 	}
 
 	go func() {
-		result, errPrettyPrintDataFile := data.SPrettyPrintDataFile(
+		result, errPrettyPrintDataFile := data.SPrettyPrintFile(
 			dataFolder+string(os.PathSeparator)+item.DataFileName,
 			func(todo string, index int) string {
 				return fmt.Sprintf("\t%v. %v", index, todo)
@@ -68,12 +68,12 @@ func listConcurrently(item record.RecordEntity, dataFolder string) (chan string,
 }
 
 func listAll() error {
-	items, errGetRecordFileContents := record.GetRecordFileContents()
+	items, errGetRecordFileContents := record.GetFileContents()
 	if errGetRecordFileContents != nil {
 		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
 	}
 
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
@@ -113,7 +113,7 @@ func ListRun(allFlag, globalFlag bool) error {
 	}
 
 	// Attempt to get current directory and list reminders associated with it
-	pathToFind, errGetHomeRemovedFilePath := shared.GetHomeRemovedCurrentProgramExecutionDirectory()
+	pathToFind, errGetHomeRemovedFilePath := shared.GetHomeRemovedWorkingDir()
 	var filePathNotStartsWithHomeErr *i_error.FilePathNotStartsWithHome
 	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
 		log.Println(

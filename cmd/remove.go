@@ -63,17 +63,17 @@ var removeCmd = &cobra.Command{
 }
 
 func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) error {
-	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetProjectRecordFromFileWith(directory)
+	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetRecordEntityWithIdentifier(directory)
 	if errGetProjectRecordFromFileWith != nil {
 		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
 	}
 
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
-	todoList, errGetTodoFromDataFile := data.GetTodoFromDataFile(dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName)
+	todoList, errGetTodoFromDataFile := data.GetTodoFromFile(dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName)
 	if errGetTodoFromDataFile != nil {
 		return fmt.Errorf("helper.GetTodoFromDataFile: %w", errGetTodoFromDataFile)
 	}
@@ -95,12 +95,12 @@ func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) er
 }
 
 func removeAllTodosAssociatedWith(directory string) error {
-	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetProjectRecordFromFileWith(directory)
+	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetRecordEntityWithIdentifier(directory)
 	if errGetProjectRecordFromFileWith != nil {
 		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
 	}
 
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
@@ -139,7 +139,7 @@ func removeRun(globalFlag, allFlag bool, args []string) error {
 		return nil
 	}
 
-	homeRemovedProgramDir, errGetHomeRemProExDir := shared.GetHomeRemovedCurrentProgramExecutionDirectory()
+	homeRemovedProgramDir, errGetHomeRemProExDir := shared.GetHomeRemovedWorkingDir()
 	if errGetHomeRemProExDir != nil {
 		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errGetHomeRemProExDir)
 	}

@@ -12,10 +12,10 @@ import (
 )
 
 // This does not create the file if it doesn't exist
-func GetTodoFromDataFile(dataFileFullPath string) ([]TodoEntity, error) {
-	file, errReadFile := os.ReadFile(dataFileFullPath)
-	if errReadFile != nil {
-		return []TodoEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
+func GetTodoFromFile(fileFullPath string) ([]TodoEntity, error) {
+	file, err := os.ReadFile(fileFullPath)
+	if err != nil {
+		return []TodoEntity{}, fmt.Errorf("os.ReadFile: %w", err)
 	}
 
 	var items []TodoEntity
@@ -26,20 +26,20 @@ func GetTodoFromDataFile(dataFileFullPath string) ([]TodoEntity, error) {
 	return items, nil
 }
 
-func WriteTodoToFile(dataFileFullPath string, todoList []TodoEntity) error {
+func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) error {
 	yamlTodoList, errMarshal := yaml.Marshal(todoList)
 	if errMarshal != nil {
 		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
 	}
 
-	errWriteFile := os.WriteFile(dataFileFullPath, yamlTodoList, 0644)
+	errWriteFile := os.WriteFile(fileFullPath, yamlTodoList, 0o644)
 	if errWriteFile != nil {
 		return fmt.Errorf("os.WriteFile: %w", errWriteFile)
 	}
 	return nil
 }
 
-func GetDataFolder() (string, error) {
+func GetFolder() (string, error) {
 	dataFolder := strings.TrimSpace(viper.GetString(config.USER_DEFINED_DATA_FOLDER))
 	if dataFolder == "" {
 		home, errHomeDir := os.UserHomeDir()
@@ -49,16 +49,16 @@ func GetDataFolder() (string, error) {
 		dataFolder = home + config.DEFAULT_DATA_PATH_AFTER_HOME
 	}
 
-	if errMkDirAll := os.MkdirAll(dataFolder, 0770); errMkDirAll != nil {
+	if errMkDirAll := os.MkdirAll(dataFolder, 0o770); errMkDirAll != nil {
 		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
 	}
 
 	return dataFolder, nil
 }
 
-func SPrettyPrintDataFile(dataFileFullPath string, editText func(todo string, index int) string) (string, error) {
+func SPrettyPrintFile(fileFullPath string, editText func(todo string, index int) string) (string, error) {
 	var b bytes.Buffer
-	todoList, errGetTodoFromDataFile := GetTodoFromDataFile(dataFileFullPath)
+	todoList, errGetTodoFromDataFile := GetTodoFromFile(fileFullPath)
 	if errGetTodoFromDataFile != nil {
 		return "", fmt.Errorf("GetTodoFromDataFile: %w", errGetTodoFromDataFile)
 	}
@@ -75,8 +75,8 @@ func SPrettyPrintDataFile(dataFileFullPath string, editText func(todo string, in
 	return b.String(), nil
 }
 
-func PrettyPrintDataFile(dataFileFullPath string, editText func(todo string, index int) string) error {
-	result, err := SPrettyPrintDataFile(dataFileFullPath, editText)
+func PrettyPrintFile(fileFullPath string, editText func(todo string, index int) string) error {
+	result, err := SPrettyPrintFile(fileFullPath, editText)
 	if err != nil {
 		return fmt.Errorf("SPrettyPrintDataFile: %w", err)
 	}

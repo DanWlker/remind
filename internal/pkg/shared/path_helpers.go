@@ -8,7 +8,7 @@ import (
 	i_error "github.com/DanWlker/remind/internal/error"
 )
 
-func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
+func FormatRemoveHome(filePathWithHome string) (string, error) {
 	home, errUserHomeDir := os.UserHomeDir()
 	if errUserHomeDir != nil {
 		return "", fmt.Errorf("os.UserHomeDir: %w", errUserHomeDir)
@@ -24,22 +24,13 @@ func FormatPathToRemoveHome(filePathWithHome string) (string, error) {
 	return strings.TrimPrefix(filePathWithHome, home), nil
 }
 
-func GetCurrentProgramExecutionDirectory() (string, error) {
-	ex, errExecutable := os.Getwd()
-	if errExecutable != nil {
-		return "", fmt.Errorf("os.Executable: %w", errExecutable)
+func GetHomeRemovedWorkingDir() (string, error) {
+	currProExDir, errGetwd := os.Getwd()
+	if errGetwd != nil {
+		return "", fmt.Errorf("Getwd: %w", errGetwd)
 	}
 
-	return ex, nil
-}
-
-func GetHomeRemovedCurrentProgramExecutionDirectory() (string, error) {
-	currProExDir, errGetCurrProExDir := GetCurrentProgramExecutionDirectory()
-	if errGetCurrProExDir != nil {
-		return "", fmt.Errorf("GetCurrentProgramExecutionDirectory: %w", errGetCurrProExDir)
-	}
-
-	path, errFormatPathToRemoveHome := FormatPathToRemoveHome(currProExDir)
+	path, errFormatPathToRemoveHome := FormatRemoveHome(currProExDir)
 	if errFormatPathToRemoveHome != nil {
 		return "", fmt.Errorf("FormatPathToRemoveHome: %w", errFormatPathToRemoveHome)
 	}

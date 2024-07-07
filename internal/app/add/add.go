@@ -20,7 +20,7 @@ func AddRun(globalFlag bool, args []string) error {
 		return nil
 	}
 
-	homeRemCurrProExDir, errHomeRemCurrProExDir := shared.GetHomeRemovedCurrentProgramExecutionDirectory()
+	homeRemCurrProExDir, errHomeRemCurrProExDir := shared.GetHomeRemovedWorkingDir()
 	if errHomeRemCurrProExDir != nil {
 		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errHomeRemCurrProExDir)
 	}
@@ -34,7 +34,7 @@ func AddRun(globalFlag bool, args []string) error {
 
 func addTodoAndAssociateTo(directory string, todoListString []string) error {
 	// Find the record in the record file
-	recordItems, errGetRecordFileContents := record.GetRecordFileContents()
+	recordItems, errGetRecordFileContents := record.GetFileContents()
 	if errGetRecordFileContents != nil {
 		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
 	}
@@ -43,7 +43,7 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		return item.Path == directory
 	})
 
-	dataFolder, errGetDataFolder := data.GetDataFolder()
+	dataFolder, errGetDataFolder := data.GetFolder()
 	if errGetDataFolder != nil {
 		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
@@ -56,7 +56,7 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		}
 		currentDirectoryRecord = &tempCurrentDirectoryRecord
 		recordItems = append(recordItems, *currentDirectoryRecord)
-		if err := record.SetRecordFileContents(recordItems); err != nil {
+		if err := record.SetFileContents(recordItems); err != nil {
 			return fmt.Errorf("helper.SetRecordFileContents: %w", err)
 		}
 	} else {
@@ -73,7 +73,7 @@ func addTodoAndAssociateTo(directory string, todoListString []string) error {
 		return fmt.Errorf("os.Stat: %w", errStat)
 	}
 
-	todoList, errReadFromFile := data.GetTodoFromDataFile(dataFileFullPath)
+	todoList, errReadFromFile := data.GetTodoFromFile(dataFileFullPath)
 	if errReadFromFile != nil {
 		return fmt.Errorf("helper.ReadFromFile: %w", errReadFromFile)
 	}

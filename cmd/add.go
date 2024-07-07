@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/DanWlker/remind/internal/app/add"
 	"github.com/DanWlker/remind/internal/config"
 	"github.com/spf13/cobra"
