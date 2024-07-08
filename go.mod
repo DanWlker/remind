@@ -1,6 +1,6 @@
 module github.com/DanWlker/remind
 
-go 1.22.4
+go 1.21
 
 require (
 	github.com/fatih/color v1.17.0 // indirect

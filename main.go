@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/DanWlker/remind/cmd"
+import "github.com/DanWlker/remind/internal/cmd"
 
 func main() {
 	cmd.Execute()

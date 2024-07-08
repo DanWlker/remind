@@ -4,8 +4,18 @@ Remind is a project aware todo app that will show relevant todos depending on th
 
 Installation (MacOs only currently):
 
-    brew install danwlker/remind/remind@0.0.2-alpha
+```sh
+brew install danwlker/remind/remind@0.0.2-alpha
+```
+
+Alternatively, with Go installed:
+
+```sh
+go install github.com/DanWlker/remind@latest
+```
 
 Uninstallation (MacOs only currently):
 
-    brew uninstall danwlker/remind/remind@0.0.2-alpha
+```sh
+brew uninstall danwlker/remind/remind@0.0.2-alpha
+```
