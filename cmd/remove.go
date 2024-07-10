@@ -5,18 +5,14 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/DanWlker/remind/internal/app/remove"
 	"github.com/DanWlker/remind/internal/config"
-	"github.com/DanWlker/remind/internal/pkg/data"
-	"github.com/DanWlker/remind/internal/pkg/record"
-	"github.com/DanWlker/remind/internal/pkg/shared"
 )
 
-var globalFlag_remove = config.BoolFlagEntity{
+var globalFlagRemove = config.BoolFlagEntity{
 	FlagEntity: config.FlagEntity{
 		Name:      "global",
 		Shorthand: "g",
@@ -25,7 +21,7 @@ var globalFlag_remove = config.BoolFlagEntity{
 	Value: false,
 }
 
-var allFlag_remove = config.BoolFlagEntity{
+var allFlagRemove = config.BoolFlagEntity{
 	FlagEntity: config.FlagEntity{
 		Name:      "all",
 		Shorthand: "a",
@@ -45,122 +41,25 @@ var removeCmd = &cobra.Command{
 	to remove todos associated with the local directory. Use -g to refer to
 	the global $HOME todo list`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		globalFlag, errGetBool_global := cmd.Flags().GetBool(globalFlag_remove.Name)
-		if errGetBool_global != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool_global))
+		globalFlag, err := cmd.Flags().GetBool(globalFlagRemove.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
 
-		allFlag, errGetBool_all := cmd.Flags().GetBool(allFlag_remove.Name)
-		if errGetBool_all != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool_all))
+		allFlag, err := cmd.Flags().GetBool(allFlagRemove.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
 
-		if errRemoveRun := removeRun(globalFlag, allFlag, args); errRemoveRun != nil {
-			cobra.CheckErr(fmt.Errorf("removeRun: %w", errGetBool_all))
+		if err := remove.RemoveRun(globalFlag, allFlag, args); err != nil {
+			cobra.CheckErr(fmt.Errorf("removeRun: %w", err))
 		}
 	},
-}
-
-func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) error {
-	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetRecordEntityWithIdentifier(directory)
-	if errGetProjectRecordFromFileWith != nil {
-		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
-	}
-
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-	}
-
-	todoList, errGetTodoFromDataFile := data.GetTodoFromFile(dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName)
-	if errGetTodoFromDataFile != nil {
-		return fmt.Errorf("helper.GetTodoFromDataFile: %w", errGetTodoFromDataFile)
-	}
-
-	var newTodoList []data.TodoEntity
-	for i, todo := range todoList {
-		if _, shouldRemove := indexesToRemove[i]; shouldRemove {
-			continue
-		}
-		newTodoList = append(newTodoList, todo)
-	}
-
-	dataFileFullPath := dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName
-	if err := data.WriteTodoToFile(dataFileFullPath, newTodoList); err != nil {
-		return fmt.Errorf("helper.WriteTodoToFile: %w", err)
-	}
-
-	return nil
-}
-
-func removeAllTodosAssociatedWith(directory string) error {
-	projectRecordEntity, errGetProjectRecordFromFileWith := record.GetRecordEntityWithIdentifier(directory)
-	if errGetProjectRecordFromFileWith != nil {
-		return fmt.Errorf("helper.GetProjectRecordFromFileWith: %w", errGetProjectRecordFromFileWith)
-	}
-
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-	}
-
-	dataFileFullPath := dataFolder + string(os.PathSeparator) + projectRecordEntity.DataFileName
-	if err := data.WriteTodoToFile(dataFileFullPath, []data.TodoEntity{}); err != nil {
-		return fmt.Errorf("helper.WriteTodoToFile: %w", err)
-	}
-
-	return nil
-}
-
-func removeRun(globalFlag, allFlag bool, args []string) error {
-	indexesToRemove := make(map[int]bool)
-
-	for _, arg := range args {
-		i, errAtoi := strconv.Atoi(arg)
-		if errAtoi != nil {
-			return fmt.Errorf("strconv.Atoi: %w", errAtoi)
-		}
-
-		indexesToRemove[i] = true
-	}
-
-	if globalFlag && allFlag {
-		if err := removeAllTodosAssociatedWith(""); err != nil {
-			return fmt.Errorf("removeAllTodosAssociatedWith: %w", err)
-		}
-		return nil
-	}
-	if globalFlag {
-		if err := removeTodoAssociatedWith("", indexesToRemove); err != nil {
-			return fmt.Errorf("removeTodoAssociatedWith: %w", err)
-		}
-
-		return nil
-	}
-
-	homeRemovedProgramDir, errGetHomeRemProExDir := shared.GetHomeRemovedWorkingDir()
-	if errGetHomeRemProExDir != nil {
-		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errGetHomeRemProExDir)
-	}
-
-	if allFlag {
-		if err := removeAllTodosAssociatedWith(homeRemovedProgramDir); err != nil {
-			return fmt.Errorf("removeAllTodosAssociatedWith: %w", err)
-		}
-		return nil
-	}
-
-	if err := removeTodoAssociatedWith(homeRemovedProgramDir, indexesToRemove); err != nil {
-		return fmt.Errorf("removeTodoAssociatedWith: %w", err)
-	}
-
-	return nil
 }
 
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
-	removeCmd.Flags().BoolP(globalFlag_remove.Name, globalFlag_remove.Shorthand, globalFlag_remove.Value, globalFlag_remove.Usage)
-	removeCmd.Flags().BoolP(allFlag_remove.Name, allFlag_remove.Shorthand, allFlag_remove.Value, allFlag_remove.Usage)
+	removeCmd.Flags().BoolP(globalFlagRemove.Name, globalFlagRemove.Shorthand, globalFlagRemove.Value, globalFlagRemove.Usage)
+	removeCmd.Flags().BoolP(allFlagRemove.Name, allFlagRemove.Shorthand, allFlagRemove.Value, allFlagRemove.Usage)
 }

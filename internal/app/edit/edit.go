@@ -1,10 +1,11 @@
 package edit
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
-	"os"
+	"path/filepath"
 	"slices"
-	"strings"
 
 	r_error "github.com/DanWlker/remind/internal/error"
 	"github.com/DanWlker/remind/internal/pkg/data"
@@ -13,46 +14,52 @@ import (
 )
 
 func editTodoAssociatedWith(directory string) error {
-	recordItems, errGetRecordFileContents := record.GetFileContents()
-	if errGetRecordFileContents != nil {
-		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
+	recordItems, err := record.GetFileContents()
+	if err != nil {
+		return fmt.Errorf("record.GetFileContents: %w", err)
 	}
 
 	idx := slices.IndexFunc(recordItems, func(item record.RecordEntity) bool {
 		return item.Path == directory
 	})
 	if idx == -1 {
-		return &r_error.RecordDoesNotExistError{}
+		return r_error.RecordDoesNotExistError{ID: directory}
 	}
-	currentDirectoryRecord := &recordItems[idx]
+	current := &recordItems[idx]
 
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
-	}
-
-	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
-
-	prettyPrintedString, errSPrettyPrintDataFile := data.SPrettyPrintFile(dataFileFullPath, nil)
-	if errSPrettyPrintDataFile != nil {
-		return fmt.Errorf("data.SPrettyPrintDataFile: %w", errSPrettyPrintDataFile)
+	dataFolder, err := data.GetFolder()
+	if err != nil {
+		return fmt.Errorf("data.GetFolder: %w", err)
 	}
 
-	result, errOpenDefaultEditor := shared.OpenDefaultEditor([]byte(prettyPrintedString))
-	if errOpenDefaultEditor != nil {
-		return fmt.Errorf("shared.OpenDefaultEditor: %w", errOpenDefaultEditor)
+	fullPath := filepath.Join(dataFolder, current.DataFileName)
+
+	prettyPrintedString, err := data.SPrettyPrintFile(fullPath, nil)
+	if err != nil {
+		return fmt.Errorf("data.SPrettyPrintDataFile: %w", err)
 	}
 
-	var todoList []data.TodoEntity
-	for _, item := range strings.Split(strings.ReplaceAll(string(result), "\r\n", "\n"), "\n") {
-		if item != "" {
+	result, err := shared.OpenDefaultEditor([]byte(prettyPrintedString))
+	if err != nil {
+		return fmt.Errorf("shared.OpenDefaultEditor: %w", err)
+	}
+
+	var (
+		todoList []data.TodoEntity
+		// A bufio.Scanner can read input (from a file, a byte slice, a
+		// string, etc) line by line, implicitly converting \r\n into
+		// \n.
+		sc = bufio.NewScanner(bytes.NewReader(result))
+	)
+
+	for sc.Scan() {
+		if item := sc.Text(); item != "" {
 			todoList = append(todoList, data.TodoEntity{Text: item})
 		}
 	}
 
-	errWriteTodoToFile := data.WriteTodoToFile(dataFileFullPath, todoList)
-	if errWriteTodoToFile != nil {
-		return fmt.Errorf("helper.WriteTodoToFile: %w", errWriteTodoToFile)
+	if err := data.WriteTodoToFile(fullPath, todoList); err != nil {
+		return fmt.Errorf("data.WriteTodoToFile: %w", err)
 	}
 
 	return nil
@@ -60,20 +67,20 @@ func editTodoAssociatedWith(directory string) error {
 
 func EditRun(globalFlag bool) error {
 	if globalFlag {
-		errAddTodoAndAssociateTo := editTodoAssociatedWith("")
-		if errAddTodoAndAssociateTo != nil {
-			return fmt.Errorf("editTodoAssociatedWith: %w", errAddTodoAndAssociateTo)
+
+		if err := editTodoAssociatedWith(""); err != nil {
+			return fmt.Errorf("editTodoAssociatedWith: %w", err)
 		}
 		return nil
 	}
 
-	homeRemCurrProExDir, errHomeRemCurrProExDir := shared.GetHomeRemovedWorkingDir()
-	if errHomeRemCurrProExDir != nil {
-		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errHomeRemCurrProExDir)
+	dir, err := shared.GetHomeRemovedWorkingDir()
+	if err != nil {
+		return fmt.Errorf("shared.GetHomeRemovedWorkingDir: %w", err)
 	}
 
-	if errEditTodoAssociatedWith := editTodoAssociatedWith(homeRemCurrProExDir); errEditTodoAssociatedWith != nil {
-		return fmt.Errorf("editTodoAssociatedWith: %w", errEditTodoAssociatedWith)
+	if err := editTodoAssociatedWith(dir); err != nil {
+		return fmt.Errorf("editTodoAssociatedWith: %w", err)
 	}
 	return nil
 }

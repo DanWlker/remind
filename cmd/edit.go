@@ -12,7 +12,7 @@ import (
 	"github.com/DanWlker/remind/internal/config"
 )
 
-var globalFlag_edit = config.BoolFlagEntity{
+var globalFlagEdit = config.BoolFlagEntity{
 	FlagEntity: config.FlagEntity{
 		Name:      "global",
 		Shorthand: "g",
@@ -28,15 +28,15 @@ var editCmd = &cobra.Command{
 	Short:   "Edits todos",
 	Long: `Edits todos, by default it will let you to edit todos associated
 	to this folder, use the -g flag to edit the global todo`,
-	Run: func(cmd *cobra.Command, args []string) {
-		globalFlag, errGetBool_global := cmd.Flags().GetBool(globalFlag_edit.Name)
-		if errGetBool_global != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool_global))
+	Run: func(cmd *cobra.Command, _ []string) {
+		globalFlag, err := cmd.Flags().GetBool(globalFlagEdit.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
 
-		errEditRun := edit.EditRun(globalFlag)
-		if errEditRun != nil {
-			cobra.CheckErr(fmt.Errorf("editRun: %w", errEditRun))
+		err = edit.EditRun(globalFlag)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("editRun: %w", err))
 		}
 	},
 }
@@ -44,5 +44,5 @@ var editCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(editCmd)
 
-	editCmd.Flags().BoolP(globalFlag_edit.Name, globalFlag_edit.Shorthand, globalFlag_edit.Value, globalFlag_edit.Usage)
+	editCmd.Flags().BoolP(globalFlagEdit.Name, globalFlagEdit.Shorthand, globalFlagEdit.Value, globalFlagEdit.Usage)
 }

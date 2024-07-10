@@ -1,6 +1,6 @@
 module github.com/DanWlker/remind
 
-go 1.22.4
+go 1.21
 
 require (
 	github.com/goccy/go-yaml v1.11.3

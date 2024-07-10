@@ -1,9 +1,8 @@
 package add
 
 import (
-	"errors"
 	"fmt"
-	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/DanWlker/remind/internal/pkg/data"
@@ -13,20 +12,20 @@ import (
 
 func AddRun(globalFlag bool, args []string) error {
 	if globalFlag {
-		errAddTodoAndAssociateTo := addTodoAndAssociateTo("", args)
-		if errAddTodoAndAssociateTo != nil {
-			return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)
+		err := addTodoAndAssociateTo("", args)
+		if err != nil {
+			return fmt.Errorf("addTodoAndAssociateTo: %w", err)
 		}
 		return nil
 	}
 
-	homeRemCurrProExDir, errHomeRemCurrProExDir := shared.GetHomeRemovedWorkingDir()
-	if errHomeRemCurrProExDir != nil {
-		return fmt.Errorf("helper.GetHomeRemovedCurrentProgramExecutionDirectory: %w", errHomeRemCurrProExDir)
+	dir, err := shared.GetHomeRemovedWorkingDir()
+	if err != nil {
+		return fmt.Errorf("shared.GetHomeRemovedWorkingDir: %w", err)
 	}
 
-	if errAddTodoAndAssociateTo := addTodoAndAssociateTo(homeRemCurrProExDir, args); errAddTodoAndAssociateTo != nil {
-		return fmt.Errorf("addTodoAndAssociateTo: %w", errAddTodoAndAssociateTo)
+	if err := addTodoAndAssociateTo(dir, args); err != nil {
+		return fmt.Errorf("addTodoAndAssociateTo: %w", err)
 	}
 
 	return nil
@@ -34,57 +33,50 @@ func AddRun(globalFlag bool, args []string) error {
 
 func addTodoAndAssociateTo(directory string, todoListString []string) error {
 	// Find the record in the record file
-	recordItems, errGetRecordFileContents := record.GetFileContents()
-	if errGetRecordFileContents != nil {
-		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
+	recordItems, err := record.GetFileContents()
+	if err != nil {
+		return fmt.Errorf("record.GetFileContents: %w", err)
 	}
 
 	idx := slices.IndexFunc(recordItems, func(item record.RecordEntity) bool {
 		return item.Path == directory
 	})
 
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	dataFolder, err := data.GetFolder()
+	if err != nil {
+		return fmt.Errorf("data.GetFolder: %w", err)
 	}
 
-	var currentDirectoryRecord *record.RecordEntity
+	var current *record.RecordEntity
 	if idx == -1 {
-		tempCurrentDirectoryRecord, errCreateNewRecord := record.CreateNewRecord(directory)
-		if errCreateNewRecord != nil {
-			return fmt.Errorf("helper.CreateNewRecord: %w", errCreateNewRecord)
+		tmp, err := record.CreateNewRecord(directory)
+		if err != nil {
+			return fmt.Errorf("record.CreateNewRecord: %w", err)
 		}
-		currentDirectoryRecord = &tempCurrentDirectoryRecord
-		recordItems = append(recordItems, *currentDirectoryRecord)
+		current = &tmp
+		recordItems = append(recordItems, tmp)
 		if err := record.SetFileContents(recordItems); err != nil {
-			return fmt.Errorf("helper.SetRecordFileContents: %w", err)
+			return fmt.Errorf("record.SetFileContents: %w", err)
 		}
 	} else {
-		currentDirectoryRecord = &recordItems[idx]
+		current = &recordItems[idx]
 	}
 
 	// Read the file, it will exist if it reaches here
-	dataFileFullPath := dataFolder + string(os.PathSeparator) + currentDirectoryRecord.DataFileName
-	_, errStat := os.Stat(dataFileFullPath)
+	fullPath := filepath.Join(dataFolder, current.DataFileName)
 
-	if errors.Is(errStat, os.ErrNotExist) {
-		return fmt.Errorf("You fcked up, os.Stat: %w", errStat) // This should never occur
-	} else if errStat != nil {
-		return fmt.Errorf("os.Stat: %w", errStat)
-	}
-
-	todoList, errReadFromFile := data.GetTodoFromFile(dataFileFullPath)
-	if errReadFromFile != nil {
-		return fmt.Errorf("helper.ReadFromFile: %w", errReadFromFile)
+	todoList, err := data.GetTodoFromFile(fullPath)
+	if err != nil {
+		return fmt.Errorf("data.GetTodoFromFile: %w", err)
 	}
 
 	for _, item := range todoListString {
 		todoList = append(todoList, data.TodoEntity{Text: item})
 	}
 
-	errWriteTodoToFile := data.WriteTodoToFile(dataFileFullPath, todoList)
-	if errWriteTodoToFile != nil {
-		return fmt.Errorf("helper.WriteTodoToFile: %w", errWriteTodoToFile)
+	err = data.WriteTodoToFile(fullPath, todoList)
+	if err != nil {
+		return fmt.Errorf("data.WriteTodoToFile: %w", err)
 	}
 	return nil
 }

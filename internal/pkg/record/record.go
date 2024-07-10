@@ -92,7 +92,7 @@ func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error)
 	}
 
 	return RecordEntity{}, &i_error.RecordDoesNotExistError{
-		RecordIdentifier: homeRemovedPath,
+		ID: homeRemovedPath,
 	}
 }
 
