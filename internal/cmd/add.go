@@ -29,13 +29,12 @@ var addCmd = &cobra.Command{
 	associate the todo with the local directory. Use -g to bind it to the
 	global $HOME todo list`,
 	Run: func(cmd *cobra.Command, args []string) {
-		globalFlag, errGetBool := cmd.Flags().GetBool(globalFlag_add.Name)
-		if errGetBool != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool))
+		globalFlag, err := cmd.Flags().GetBool(globalFlag_add.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
-		errAddRun := add.AddRun(globalFlag, args)
-		if errAddRun != nil {
-			cobra.CheckErr(fmt.Errorf("addRun: %w", errAddRun))
+		if err := add.AddRun(globalFlag, args); err != nil {
+			cobra.CheckErr(fmt.Errorf("addRun: %w", err))
 		}
 	},
 }

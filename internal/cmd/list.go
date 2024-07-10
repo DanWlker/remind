@@ -38,18 +38,17 @@ var listCmd = &cobra.Command{
 	Long: `Lists todos, by default it attempts to list todos associated to
 	this folder, use the -a flag to list all todos`,
 	Run: func(cmd *cobra.Command, args []string) {
-		allFlag, errGetBoolAllFlag := cmd.Flags().GetBool(allFlag_list.Name)
-		if errGetBoolAllFlag != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: errGetBoolAllFlag: %w", errGetBoolAllFlag))
+		allFlag, err := cmd.Flags().GetBool(allFlag_list.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
 
-		globalFlag, errGetBoolGlobalFlag := cmd.Flags().GetBool(globalFlag_list.Name)
-		if errGetBoolGlobalFlag != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: errGetBoolGlobalFlag: %w", errGetBoolGlobalFlag))
+		globalFlag, err := cmd.Flags().GetBool(globalFlag_list.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
-		errListRun := list.ListRun(allFlag, globalFlag)
-		if errListRun != nil {
-			cobra.CheckErr(fmt.Errorf("listRun: %w", errListRun))
+		if err := list.ListRun(allFlag, globalFlag); err != nil {
+			cobra.CheckErr(fmt.Errorf("listRun: %w", err))
 		}
 	},
 }
