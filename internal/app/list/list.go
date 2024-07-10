@@ -46,11 +46,16 @@ func listOne(pathToFind string) error {
 	return nil
 }
 
-func listConcurrently(item record.RecordEntity, dataFolder string) <-chan string {
+func listConcurrently(item record.RecordEntity, dataFolder string) (<-chan string, error) {
 	c := make(chan string)
 
 	var header string
-	if item.Path == "" {
+	homeRemoved, err := shared.GetHomeRemovedHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("shared.FormatRemoveHome: %w", err)
+	}
+
+	if item.Path == homeRemoved {
 		header = "Global:\n"
 	} else {
 		header = item.Path + ":\n"
@@ -71,7 +76,7 @@ func listConcurrently(item record.RecordEntity, dataFolder string) <-chan string
 		c <- header + result
 	}()
 
-	return c
+	return c, nil
 }
 
 func listAll() error {
@@ -87,7 +92,11 @@ func listAll() error {
 
 	var channelList []<-chan string
 	for _, item := range items {
-		c := listConcurrently(item, dataFolder)
+		c, err := listConcurrently(item, dataFolder)
+		if err != nil {
+			return fmt.Errorf("listConcurrently: %w", err)
+		}
+
 		channelList = append(channelList, c)
 	}
 

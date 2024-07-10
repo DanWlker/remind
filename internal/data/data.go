@@ -28,8 +28,10 @@ func GetTodoFromFile(fileFullPath string) (items []TodoEntity, err error) {
 	}()
 
 	dec := yaml.NewDecoder(f)
-
-	if err := dec.Decode(&items); err != nil {
+	err = dec.Decode(&items)
+	if errors.Is(err, io.EOF) {
+		return nil, nil
+	} else if err != nil {
 		return nil, fmt.Errorf("dec.Decode: %w", err)
 	}
 

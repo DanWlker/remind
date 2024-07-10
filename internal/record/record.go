@@ -3,6 +3,7 @@ package record
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/DanWlker/remind/internal/config"
 	"github.com/DanWlker/remind/internal/data"
 	i_error "github.com/DanWlker/remind/internal/error"
+	"github.com/DanWlker/remind/internal/shared"
 )
 
 func GetFile() (string, error) {
@@ -26,7 +28,12 @@ func GetFile() (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("os.Create: %w", err)
 		}
-		globalRecordEntity, err := CreateNewRecord("")
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+
+		globalRecordEntity, err := CreateNewRecord(homeRemoved)
 		if err != nil {
 			return "", fmt.Errorf("CreateNewRecord: %w", err)
 		}
@@ -58,7 +65,10 @@ func GetFileContents() (items []RecordEntity, err error) {
 	}()
 
 	dec := yaml.NewDecoder(f)
-	if err := dec.Decode(&items); err != nil {
+	err = dec.Decode(&items)
+	if errors.Is(err, io.EOF) {
+		return nil, nil
+	} else if err != nil {
 		return nil, fmt.Errorf("dec.Decode: %w", err)
 	}
 
