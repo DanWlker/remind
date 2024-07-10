@@ -14,75 +14,85 @@ import (
 )
 
 func GetFile() (string, error) {
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return "", fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	dataFolder, err := data.GetFolder()
+	if err != nil {
+		return "", fmt.Errorf("data.GetFolder: %w", err)
 	}
 
-	defaultDataRecordFileFullPath := dataFolder + config.DefaultDataRecordFullFileName
+	fullPath := filepath.Join(dataFolder, config.DefaultDataRecordFullFileName)
 
-	if _, errStat := os.Stat(defaultDataRecordFileFullPath); errors.Is(errStat, os.ErrNotExist) {
-		_, errCreate := os.Create(defaultDataRecordFileFullPath)
-		if errCreate != nil {
-			return "", fmt.Errorf("os.Create: %w", errCreate)
+	if _, err := os.Stat(fullPath); errors.Is(err, os.ErrNotExist) {
+		_, err := os.Create(fullPath)
+		if err != nil {
+			return "", fmt.Errorf("os.Create: %w", err)
 		}
-		globalRecordEntity, errCreateNewRecord := CreateNewRecord("")
-		if errCreateNewRecord != nil {
-			return "", fmt.Errorf("CreateNewRecord: %w", errCreateNewRecord)
+		globalRecordEntity, err := CreateNewRecord("")
+		if err != nil {
+			return "", fmt.Errorf("CreateNewRecord: %w", err)
 		}
 
 		if err := SetFileContents([]RecordEntity{globalRecordEntity}); err != nil {
 			return "", fmt.Errorf("SetRecordFileContents: %w", err)
 		}
-	} else if errStat != nil {
-		return "", fmt.Errorf("os.Stat: %w", errStat)
+	} else if err != nil {
+		return "", fmt.Errorf("os.Stat: %w", err)
 	}
 
-	return defaultDataRecordFileFullPath, nil
+	return fullPath, nil
 }
 
-func GetFileContents() ([]RecordEntity, error) {
-	recordFileString, errGetRecordFile := GetFile()
-	if errGetRecordFile != nil {
-		return []RecordEntity{}, fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
+func GetFileContents() (items []RecordEntity, err error) {
+	recordFile, err := GetFile()
+	if err != nil {
+		return nil, fmt.Errorf("GetFile: %w", err)
 	}
 
-	recordFile, errReadFile := os.ReadFile(recordFileString)
-	if errReadFile != nil {
-		return []RecordEntity{}, fmt.Errorf("os.ReadFile: %w", errReadFile)
+	f, err := os.Open(recordFile)
+	if err != nil {
+		return nil, fmt.Errorf("os.Open: %w", err)
 	}
+	defer func() {
+		if err2 := f.Close(); err2 != nil {
+			err = errors.Join(err, err2)
+		}
+	}()
 
-	var items []RecordEntity
-	if errUnmarshal := yaml.Unmarshal(recordFile, &items); errUnmarshal != nil {
-		return []RecordEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
+	dec := yaml.NewDecoder(f)
+	if err := dec.Decode(&items); err != nil {
+		return nil, fmt.Errorf("dec.Decode: %w", err)
 	}
 
 	return items, nil
 }
 
-func SetFileContents(items []RecordEntity) error {
-	recordFileString, errGetRecordFile := GetFile()
-	if errGetRecordFile != nil {
-		return fmt.Errorf("GetRecordFile: %w", errGetRecordFile)
+func SetFileContents(items []RecordEntity) (err error) {
+	recordFile, err := GetFile()
+	if err != nil {
+		return fmt.Errorf("GetFile: %w", err)
 	}
 
-	yamlContent, errMarshal := yaml.Marshal(items)
-	if errMarshal != nil {
-		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
+	f, err := os.OpenFile(recordFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		return fmt.Errorf("os.OpenFile: %w", err)
 	}
+	defer func() {
+		if err2 := f.Close(); err2 != nil {
+			err = errors.Join(err, err2)
+		}
+	}()
 
-	errWriteFile := os.WriteFile(recordFileString, yamlContent, 0o644)
-	if errWriteFile != nil {
-		return fmt.Errorf("os.WriteFile: %w", errWriteFile)
+	enc := yaml.NewEncoder(f)
+	if err := enc.Encode(items); err != nil {
+		return fmt.Errorf("enc.Encode: %w", err)
 	}
 
 	return nil
 }
 
 func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error) {
-	allRecords, errGetFileContents := GetFileContents()
-	if errGetFileContents != nil {
-		return RecordEntity{}, fmt.Errorf("GetRecordFileContents: %w", errGetFileContents)
+	allRecords, err := GetFileContents()
+	if err != nil {
+		return RecordEntity{}, fmt.Errorf("GetFileContents: %w", err)
 	}
 
 	for _, record := range allRecords {
@@ -91,20 +101,21 @@ func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error)
 		}
 	}
 
-	return RecordEntity{}, &i_error.RecordDoesNotExistError{
+	return RecordEntity{}, i_error.RecordDoesNotExistError{
 		ID: homeRemovedPath,
 	}
 }
 
+// TODO: This could leak temp files, perhaps need an api that returns the record entity but create the record for the path if it doesn't exist. TLDR instead of exposing a "Create" method directly, expose only the function to get the record
 func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return RecordEntity{}, fmt.Errorf("GetDataFolder: %w", errGetDataFolder)
+	dataFolder, err := data.GetFolder()
+	if err != nil {
+		return RecordEntity{}, fmt.Errorf("data.GetFolder: %w", err)
 	}
 
-	newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+config.DefaultDataFileFileExtension)
-	if errCreateTemp != nil {
-		return RecordEntity{}, fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
+	newFile, err := os.CreateTemp(dataFolder, "*"+config.DefaultDataFileFileExtension)
+	if err != nil {
+		return RecordEntity{}, fmt.Errorf("os.CreateTemp: %w", err)
 	}
 
 	_, fileName := filepath.Split(newFile.Name())

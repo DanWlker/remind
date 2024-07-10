@@ -3,36 +3,42 @@ package shared
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	i_error "github.com/DanWlker/remind/internal/error"
 )
 
 func FormatRemoveHome(filePathWithHome string) (string, error) {
-	home, errUserHomeDir := os.UserHomeDir()
-	if errUserHomeDir != nil {
-		return "", fmt.Errorf("os.UserHomeDir: %w", errUserHomeDir)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("os.UserHomeDir: %w", err)
 	}
 
-	if !strings.HasPrefix(filePathWithHome, home) {
-		return filePathWithHome, &i_error.NotUnderHomeError{
+	rel, err := filepath.Rel(home, filePathWithHome)
+	if err != nil {
+		return "", fmt.Errorf("filepath.Rel: computing relative path from %s to %s: %w", home, filePathWithHome, err)
+	}
+
+	if !strings.HasPrefix(rel, "../") {
+		return "", i_error.NotUnderHomeError{
 			Home: home,
 			File: filePathWithHome,
 		}
 	}
 
-	return strings.TrimPrefix(filePathWithHome, home), nil
+	return rel, nil
 }
 
 func GetHomeRemovedWorkingDir() (string, error) {
-	currProExDir, errGetwd := os.Getwd()
-	if errGetwd != nil {
-		return "", fmt.Errorf("Getwd: %w", errGetwd)
+	currProExDir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("os.Getwd: %w", err)
 	}
 
-	path, errFormatPathToRemoveHome := FormatRemoveHome(currProExDir)
-	if errFormatPathToRemoveHome != nil {
-		return "", fmt.Errorf("FormatPathToRemoveHome: %w", errFormatPathToRemoveHome)
+	path, err := FormatRemoveHome(currProExDir)
+	if err != nil {
+		return "", fmt.Errorf("FormatRemoveHome: %w", err)
 	}
 
 	return path, nil

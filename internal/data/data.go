@@ -16,17 +16,18 @@ import (
 )
 
 // This does not create the file if it doesn't exist
-func GetTodoFromFile(fileFullPath string) ([]TodoEntity, error) {
+func GetTodoFromFile(fileFullPath string) (items []TodoEntity, err error) {
 	f, err := os.Open(fileFullPath)
 	if err != nil {
 		return nil, fmt.Errorf("os.Open: %w", err)
 	}
-	defer f.Close()
+	defer func() {
+		if err2 := f.Close(); err2 != nil {
+			err = errors.Join(err, err2)
+		}
+	}()
 
-	var (
-		items []TodoEntity
-		dec   = yaml.NewDecoder(f)
-	)
+	dec := yaml.NewDecoder(f)
 
 	if err := dec.Decode(&items); err != nil {
 		return nil, fmt.Errorf("dec.Decode: %w", err)
@@ -45,10 +46,10 @@ func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) (err error) {
 		return fmt.Errorf("os.OpenFile: %w", err)
 	}
 	defer func() {
-		if errf := f.Close(); errf != nil {
+		if err2 := f.Close(); err2 != nil {
 			err = errors.Join(
 				err,
-				fmt.Errorf("f.Close: %w", errf),
+				fmt.Errorf("f.Close: %w", err2),
 			)
 		}
 	}()
