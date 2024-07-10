@@ -16,8 +16,8 @@ func FormatRemoveHome(filePathWithHome string) (string, error) {
 
 	if !strings.HasPrefix(filePathWithHome, home) {
 		return filePathWithHome, &i_error.NotUnderHomeError{
-			HomeStr: home,
-			FileStr: filePathWithHome,
+			Home: home,
+			File: filePathWithHome,
 		}
 	}
 

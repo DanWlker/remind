@@ -15,12 +15,12 @@ const (
 )
 
 // Data Defaults
-const DefaultDataPathAfterHome = string(os.PathSeparator) + "remind"
+const DefaultDataSubdir = "remind"
 
 const (
 	defaultDataRecordFileType     = "yaml"
 	defaultDataRecordFileName     = ".rrecord"
-	DefaultDataRecordFullFileName = string(os.PathSeparator) + defaultDataRecordFileName + "." + defaultDataRecordFileType
+	DefaultDataRecordFullFileName = defaultDataRecordFileName + "." + defaultDataRecordFileType
 )
 
 const (

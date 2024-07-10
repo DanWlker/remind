@@ -2,8 +2,11 @@ package data
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -14,44 +17,63 @@ import (
 
 // This does not create the file if it doesn't exist
 func GetTodoFromFile(fileFullPath string) ([]TodoEntity, error) {
-	file, err := os.ReadFile(fileFullPath)
+	f, err := os.Open(fileFullPath)
 	if err != nil {
-		return []TodoEntity{}, fmt.Errorf("os.ReadFile: %w", err)
+		return nil, fmt.Errorf("os.Open: %w", err)
 	}
+	defer f.Close()
 
-	var items []TodoEntity
-	if errUnmarshal := yaml.Unmarshal(file, &items); errUnmarshal != nil {
-		return []TodoEntity{}, fmt.Errorf("yaml.Unmarshal: %w", errUnmarshal)
+	var (
+		items []TodoEntity
+		dec   = yaml.NewDecoder(f)
+	)
+
+	if err := dec.Decode(&items); err != nil {
+		return nil, fmt.Errorf("dec.Decode: %w", err)
 	}
 
 	return items, nil
 }
 
-func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) error {
-	yamlTodoList, errMarshal := yaml.Marshal(todoList)
-	if errMarshal != nil {
-		return fmt.Errorf("yaml.Marshal: %w", errMarshal)
+func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) (err error) {
+	// Opens with
+	// Write - WRONLY
+	// Create if not exist - CREATE
+	// Truncate (empty the file?) - Truncate
+	f, err := os.OpenFile(fileFullPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		return fmt.Errorf("os.OpenFile: %w", err)
+	}
+	defer func() {
+		if errf := f.Close(); errf != nil {
+			err = errors.Join(
+				err,
+				fmt.Errorf("f.Close: %w", errf),
+			)
+		}
+	}()
+
+	enc := yaml.NewEncoder(f)
+	if err := enc.Encode(todoList); err != nil {
+		return fmt.Errorf("enc.Encode: %w", err)
 	}
 
-	errWriteFile := os.WriteFile(fileFullPath, yamlTodoList, 0o644)
-	if errWriteFile != nil {
-		return fmt.Errorf("os.WriteFile: %w", errWriteFile)
-	}
-	return nil
+	return err
 }
 
 func GetFolder() (string, error) {
 	dataFolder := strings.TrimSpace(viper.GetString(config.UserDefinedDataFolder))
 	if dataFolder == "" {
-		home, errHomeDir := os.UserHomeDir()
-		if errHomeDir != nil {
-			return "", fmt.Errorf("os.UserHomeDir: %w", errHomeDir)
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("os.UserHomeDir: %w", err)
 		}
-		dataFolder = home + config.DefaultDataPathAfterHome
+		dataFolder = filepath.Join(home, config.DefaultDataSubdir)
+
 	}
 
-	if errMkDirAll := os.MkdirAll(dataFolder, 0o770); errMkDirAll != nil {
-		return "", fmt.Errorf("os.MkdirAll: %w", errMkDirAll)
+	if err := os.MkdirAll(dataFolder, 0o770); err != nil {
+		return "", fmt.Errorf("os.MkdirAll: %w", err)
 	}
 
 	return dataFolder, nil
@@ -59,28 +81,38 @@ func GetFolder() (string, error) {
 
 func SPrettyPrintFile(fileFullPath string, editText func(todo string, index int) string) (string, error) {
 	var b bytes.Buffer
-	todoList, errGetTodoFromDataFile := GetTodoFromFile(fileFullPath)
-	if errGetTodoFromDataFile != nil {
-		return "", fmt.Errorf("GetTodoFromDataFile: %w", errGetTodoFromDataFile)
-	}
 
-	for i, todo := range todoList {
-		if editText == nil {
-			b.WriteString(todo.Text)
-		} else {
-			b.WriteString(editText(todo.Text, i))
-		}
-		b.WriteString("\n")
+	if err := FPrettyPrintFile(&b, fileFullPath, editText); err != nil {
+		return "", fmt.Errorf("FPrettyPrintFile: %w", err)
 	}
 
 	return b.String(), nil
 }
 
 func PrettyPrintFile(fileFullPath string, editText func(todo string, index int) string) error {
-	result, err := SPrettyPrintFile(fileFullPath, editText)
-	if err != nil {
-		return fmt.Errorf("SPrettyPrintDataFile: %w", err)
+	if err := FPrettyPrintFile(os.Stdout, fileFullPath, editText); err != nil {
+		return fmt.Errorf("FPrettyPrintFile: %w", err)
 	}
-	fmt.Println(result)
+	return nil
+}
+
+func FPrettyPrintFile(w io.Writer, fileName string, editText func(todo string, index int) string) error {
+	todoList, err := GetTodoFromFile(fileName)
+	if err != nil {
+		return fmt.Errorf("GetTodoFromFile: %w", err)
+	}
+
+	for i, todo := range todoList {
+		if editText == nil {
+			if _, err := fmt.Fprintln(w, todo.Text); err != nil {
+				return fmt.Errorf("editText is nil, fmt.Fprintln: %w", err)
+			}
+			continue
+		}
+		if _, err := fmt.Fprintln(w, editText(todo.Text, i)); err != nil {
+			return fmt.Errorf("editText not nil, fmt.Fprintln: %w", err)
+		}
+	}
+
 	return nil
 }
