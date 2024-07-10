@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/DanWlker/remind/internal/pkg/data"
-	"github.com/DanWlker/remind/internal/pkg/record"
-	"github.com/DanWlker/remind/internal/pkg/shared"
+	"github.com/DanWlker/remind/internal/data"
+	"github.com/DanWlker/remind/internal/record"
+	"github.com/DanWlker/remind/internal/shared"
 )
 
 func AddRun(globalFlag bool, args []string) error {

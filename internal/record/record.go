@@ -9,8 +9,8 @@ import (
 	"github.com/goccy/go-yaml"
 
 	"github.com/DanWlker/remind/internal/config"
+	"github.com/DanWlker/remind/internal/data"
 	i_error "github.com/DanWlker/remind/internal/error"
-	"github.com/DanWlker/remind/internal/pkg/data"
 )
 
 func GetFile() (string, error) {
@@ -19,7 +19,7 @@ func GetFile() (string, error) {
 		return "", fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
 	}
 
-	defaultDataRecordFileFullPath := dataFolder + config.DEFAULT_DATA_RECORD_FULL_FILE_NAME
+	defaultDataRecordFileFullPath := dataFolder + config.DefaultDataRecordFullFileName
 
 	if _, errStat := os.Stat(defaultDataRecordFileFullPath); errors.Is(errStat, os.ErrNotExist) {
 		_, errCreate := os.Create(defaultDataRecordFileFullPath)
@@ -102,7 +102,7 @@ func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
 		return RecordEntity{}, fmt.Errorf("GetDataFolder: %w", errGetDataFolder)
 	}
 
-	newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+config.DEFAULT_DATA_FILE_EXTENSION)
+	newFile, errCreateTemp := os.CreateTemp(dataFolder, "*"+config.DefaultDataFileFileExtension)
 	if errCreateTemp != nil {
 		return RecordEntity{}, fmt.Errorf("os.CreateTemp: %w", errCreateTemp)
 	}

@@ -41,13 +41,13 @@ func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) error {
 }
 
 func GetFolder() (string, error) {
-	dataFolder := strings.TrimSpace(viper.GetString(config.USER_DEFINED_DATA_FOLDER))
+	dataFolder := strings.TrimSpace(viper.GetString(config.UserDefinedDataFolder))
 	if dataFolder == "" {
 		home, errHomeDir := os.UserHomeDir()
 		if errHomeDir != nil {
 			return "", fmt.Errorf("os.UserHomeDir: %w", errHomeDir)
 		}
-		dataFolder = home + config.DEFAULT_DATA_PATH_AFTER_HOME
+		dataFolder = home + config.DefaultDataPathAfterHome
 	}
 
 	if errMkDirAll := os.MkdirAll(dataFolder, 0o770); errMkDirAll != nil {

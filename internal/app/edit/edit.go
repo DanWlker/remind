@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/DanWlker/remind/internal/data"
 	r_error "github.com/DanWlker/remind/internal/error"
-	"github.com/DanWlker/remind/internal/pkg/data"
-	"github.com/DanWlker/remind/internal/pkg/record"
-	"github.com/DanWlker/remind/internal/pkg/shared"
+	"github.com/DanWlker/remind/internal/record"
+	"github.com/DanWlker/remind/internal/shared"
 )
 
 func editTodoAssociatedWith(directory string) error {

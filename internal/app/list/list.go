@@ -6,10 +6,10 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/DanWlker/remind/internal/data"
 	i_error "github.com/DanWlker/remind/internal/error"
-	"github.com/DanWlker/remind/internal/pkg/data"
-	"github.com/DanWlker/remind/internal/pkg/record"
-	"github.com/DanWlker/remind/internal/pkg/shared"
+	"github.com/DanWlker/remind/internal/record"
+	"github.com/DanWlker/remind/internal/shared"
 )
 
 func listOne(pathToFind string) error {
