@@ -17,7 +17,11 @@ func listOne(pathToFind string) error {
 	var errRecordDoesNotExist i_error.RecordDoesNotExistError
 	if errors.As(err, &errRecordDoesNotExist) {
 		recordIdentifier := errRecordDoesNotExist.ID
-		if recordIdentifier == "" {
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if recordIdentifier == homeRemoved {
 			recordIdentifier = "$HOME"
 		}
 		fmt.Println("No record linked to this folder found: " + recordIdentifier)
@@ -105,7 +109,11 @@ func ListRun(allFlag, globalFlag bool) error {
 
 	// Check should list global
 	if globalFlag {
-		if err := listOne(""); err != nil {
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if err := listOne(homeRemoved); err != nil {
 			return fmt.Errorf("globalFlag: listOne: %w", err)
 		}
 		return nil

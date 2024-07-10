@@ -74,13 +74,22 @@ func RemoveRun(globalFlag, allFlag bool, args []string) error {
 	}
 
 	if globalFlag && allFlag {
-		if err := removeAllTodosAssociatedWith(""); err != nil {
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if err := removeAllTodosAssociatedWith(homeRemoved); err != nil {
 			return fmt.Errorf("removeAllTodosAssociatedWith: %w", err)
 		}
 		return nil
 	}
+
 	if globalFlag {
-		if err := removeTodoAssociatedWith("", indexesToRemove); err != nil {
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if err := removeTodoAssociatedWith(homeRemoved, indexesToRemove); err != nil {
 			return fmt.Errorf("removeTodoAssociatedWith: %w", err)
 		}
 

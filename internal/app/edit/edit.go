@@ -67,8 +67,11 @@ func editTodoAssociatedWith(directory string) error {
 
 func EditRun(globalFlag bool) error {
 	if globalFlag {
-
-		if err := editTodoAssociatedWith(""); err != nil {
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if err := editTodoAssociatedWith(homeRemoved); err != nil {
 			return fmt.Errorf("editTodoAssociatedWith: %w", err)
 		}
 		return nil

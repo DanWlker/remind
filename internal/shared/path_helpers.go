@@ -30,6 +30,20 @@ func FormatRemoveHome(filePathWithHome string) (string, error) {
 	return rel, nil
 }
 
+func GetHomeRemovedHomeDir() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("os.UserHomeDir: %w", err)
+	}
+
+	homeRemoved, err := FormatRemoveHome(home)
+	if err != nil {
+		return "", fmt.Errorf("shared.FormatRemoveHome: %w", err)
+	}
+
+	return homeRemoved, nil
+}
+
 func GetHomeRemovedWorkingDir() (string, error) {
 	currProExDir, err := os.Getwd()
 	if err != nil {

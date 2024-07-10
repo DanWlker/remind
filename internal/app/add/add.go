@@ -12,7 +12,12 @@ import (
 
 func AddRun(globalFlag bool, args []string) error {
 	if globalFlag {
-		err := addTodoAndAssociateTo("", args)
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+
+		err = addTodoAndAssociateTo(homeRemoved, args)
 		if err != nil {
 			return fmt.Errorf("addTodoAndAssociateTo: %w", err)
 		}
