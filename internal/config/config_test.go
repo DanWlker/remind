@@ -13,14 +13,16 @@ func TestGetConfigFolder(t *testing.T) {
 	}
 	ex = filepath.Join(ex, "remind")
 
-	t.Run(ex, func(t *testing.T) {
-		res, err := GetConfigFolder()
-		if err != nil {
-			t.Errorf("Expected no errors, got %v", err)
-		}
+	res, err := GetConfigFolder()
+	if err != nil {
+		t.Errorf("Expected no errors, got %v", err)
+	}
 
-		if res != ex {
-			t.Errorf("Expected %v, got %v", ex, res)
-		}
-	})
+	if res != ex {
+		t.Errorf("Expected %v, got %v", ex, res)
+	}
+
+	if _, err := os.Stat(ex); err != nil {
+		t.Errorf("Expected os.Stat to have no errors, got %v", err)
+	}
 }
