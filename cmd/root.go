@@ -43,8 +43,8 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 }
@@ -60,8 +60,8 @@ func initConfig() {
 	}
 
 	viper.AddConfigPath(configFolder)
-	viper.SetConfigType(config.DEFAULT_CONFIG_FILE_TYPE)
-	viper.SetConfigName(config.DEFAULT_CONFIG_FILE_NAME)
+	viper.SetConfigType(config.DefaultConfigFileType)
+	viper.SetConfigName(config.DefaultConfigFileName)
 
 	viper.AutomaticEnv()
 

@@ -12,7 +12,7 @@ import (
 	"github.com/DanWlker/remind/internal/config"
 )
 
-var globalFlag_add = config.BoolFlagEntity{
+var globalFlagAdd = config.BoolFlagEntity{
 	FlagEntity: config.FlagEntity{
 		Name:      "global",
 		Shorthand: "g",
@@ -29,13 +29,14 @@ var addCmd = &cobra.Command{
 	associate the todo with the local directory. Use -g to bind it to the
 	global $HOME todo list`,
 	Run: func(cmd *cobra.Command, args []string) {
-		globalFlag, errGetBool := cmd.Flags().GetBool(globalFlag_add.Name)
-		if errGetBool != nil {
-			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", errGetBool))
+		globalFlag, err := cmd.Flags().GetBool(globalFlagAdd.Name)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("cmd.Flags().GetBool: %w", err))
 		}
-		errAddRun := add.AddRun(globalFlag, args)
-		if errAddRun != nil {
-			cobra.CheckErr(fmt.Errorf("addRun: %w", errAddRun))
+
+		err = add.AddRun(globalFlag, args)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("addRun: %w", err))
 		}
 	},
 }
@@ -43,5 +44,5 @@ var addCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(addCmd)
 
-	addCmd.Flags().BoolP(globalFlag_add.Name, globalFlag_add.Shorthand, globalFlag_add.Value, globalFlag_add.Usage)
+	addCmd.Flags().BoolP(globalFlagAdd.Name, globalFlagAdd.Shorthand, globalFlagAdd.Value, globalFlagAdd.Usage)
 }

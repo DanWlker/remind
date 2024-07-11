@@ -4,62 +4,74 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
+	"path/filepath"
 
+	"github.com/DanWlker/remind/internal/data"
 	i_error "github.com/DanWlker/remind/internal/error"
-	"github.com/DanWlker/remind/internal/pkg/data"
-	"github.com/DanWlker/remind/internal/pkg/record"
-	"github.com/DanWlker/remind/internal/pkg/shared"
+	"github.com/DanWlker/remind/internal/record"
+	"github.com/DanWlker/remind/internal/shared"
 )
 
 func listOne(pathToFind string) error {
-	projectRecordEntity, errFindProjectRecordEntity := record.GetRecordEntityWithIdentifier(pathToFind)
-	var errRecordDoesNotExist *i_error.RecordDoesNotExistError
-	if errors.As(errFindProjectRecordEntity, &errRecordDoesNotExist) {
-		recordIdentifier := errRecordDoesNotExist.RecordIdentifier
-		if recordIdentifier == "" {
+	projectRecordEntity, err := record.GetRecordEntityWithIdentifier(pathToFind)
+	var errRecordDoesNotExist i_error.RecordDoesNotExistError
+	if errors.As(err, &errRecordDoesNotExist) {
+		recordIdentifier := errRecordDoesNotExist.ID
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if recordIdentifier == homeRemoved {
 			recordIdentifier = "$HOME"
 		}
 		fmt.Println("No record linked to this folder found: " + recordIdentifier)
 		return nil
-	} else if errFindProjectRecordEntity != nil {
-		return fmt.Errorf("helper.FindProjectRecordFromFileWith: %w", errFindProjectRecordEntity)
+	} else if err != nil {
+		return fmt.Errorf("record.GetRecordEntityWithIdentifier: %w", err)
 	}
 
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	dataFolder, err := data.GetFolder()
+	if err != nil {
+		return fmt.Errorf("data.GetFolder: %w", err)
 	}
 
-	if errPrettyPrintFile := data.PrettyPrintFile(
-		dataFolder+string(os.PathSeparator)+projectRecordEntity.DataFileName,
+	err = data.PrettyPrintFile(
+		filepath.Join(dataFolder, projectRecordEntity.DataFileName),
 		func(todo string, index int) string {
 			return fmt.Sprintf("\t%v. %v", index, todo)
-		}); errPrettyPrintFile != nil {
-		return fmt.Errorf("helper.PrettyPrintDataFile: %w", errPrettyPrintFile)
+		})
+	if err != nil {
+		return fmt.Errorf("data.PrettyPrintFile: %w", err)
 	}
 	return nil
 }
 
-func listConcurrently(item record.RecordEntity, dataFolder string) (chan string, error) {
-	var c chan string = make(chan string)
+func listConcurrently(item record.RecordEntity, dataFolder string) (<-chan string, error) {
+	c := make(chan string)
 
 	var header string
-	if item.Path == "" {
+	homeRemoved, err := shared.GetHomeRemovedHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("shared.FormatRemoveHome: %w", err)
+	}
+
+	if item.Path == homeRemoved {
 		header = "Global:\n"
 	} else {
 		header = item.Path + ":\n"
 	}
 
 	go func() {
-		result, errPrettyPrintDataFile := data.SPrettyPrintFile(
-			dataFolder+string(os.PathSeparator)+item.DataFileName,
+		defer close(c)
+		result, err := data.SPrettyPrintFile(
+			filepath.Join(dataFolder, item.DataFileName),
 			func(todo string, index int) string {
 				return fmt.Sprintf("\t%v. %v", index, todo)
 			},
 		)
-		if errPrettyPrintDataFile != nil {
-			c <- fmt.Sprintf("Error: Something went wrong: data.SPrettyPrintDataFile: %v", errPrettyPrintDataFile)
+		if err != nil {
+			c <- fmt.Sprintf("Error: Something went wrong: data.SPrettyPrintDataFile: %v", err)
+			return
 		}
 		c <- header + result
 	}()
@@ -68,23 +80,23 @@ func listConcurrently(item record.RecordEntity, dataFolder string) (chan string,
 }
 
 func listAll() error {
-	items, errGetRecordFileContents := record.GetFileContents()
-	if errGetRecordFileContents != nil {
-		return fmt.Errorf("helper.GetRecordFileContents: %w", errGetRecordFileContents)
+	items, err := record.GetFileContents()
+	if err != nil {
+		return fmt.Errorf("record.GetFileContents: %w", err)
 	}
 
-	dataFolder, errGetDataFolder := data.GetFolder()
-	if errGetDataFolder != nil {
-		return fmt.Errorf("helper.GetDataFolder: %w", errGetDataFolder)
+	dataFolder, err := data.GetFolder()
+	if err != nil {
+		return fmt.Errorf("data.GetFolder: %w", err)
 	}
 
-	var channelList []chan string
+	var channelList []<-chan string
 	for _, item := range items {
-		c, errlistConcurrently := listConcurrently(item, dataFolder)
-		if errlistConcurrently != nil {
-			log.Println("listConcurrently: %w", errlistConcurrently)
-			continue
+		c, err := listConcurrently(item, dataFolder)
+		if err != nil {
+			return fmt.Errorf("listConcurrently: %w", err)
 		}
+
 		channelList = append(channelList, c)
 	}
 
@@ -98,32 +110,37 @@ func listAll() error {
 func ListRun(allFlag, globalFlag bool) error {
 	// Check should list all
 	if allFlag {
-		if errListAll := listAll(); errListAll != nil {
-			return fmt.Errorf("listAll: %w", errListAll)
+		if err := listAll(); err != nil {
+			return fmt.Errorf("listAll: %w", err)
 		}
 		return nil
 	}
 
 	// Check should list global
 	if globalFlag {
-		if errListOneGlobal := listOne(""); errListOneGlobal != nil {
-			return fmt.Errorf("listOne: shouldListGlobal: %w", errListOneGlobal)
+		homeRemoved, err := shared.GetHomeRemovedHomeDir()
+		if err != nil {
+			return fmt.Errorf("shared.GetHomeRemovedHomeDir: %w", err)
+		}
+		if err := listOne(homeRemoved); err != nil {
+			return fmt.Errorf("globalFlag: listOne: %w", err)
 		}
 		return nil
 	}
 
 	// Attempt to get current directory and list reminders associated with it
-	pathToFind, errGetHomeRemovedFilePath := shared.GetHomeRemovedWorkingDir()
-	var filePathNotStartsWithHomeErr *i_error.FilePathNotStartsWithHome
-	if errors.As(errGetHomeRemovedFilePath, &filePathNotStartsWithHomeErr) {
+	pathToFind, err := shared.GetHomeRemovedWorkingDir()
+	var notUnderHomeError i_error.NotUnderHomeError
+	if errors.As(err, &notUnderHomeError) {
 		log.Println(
-			filePathNotStartsWithHomeErr.Error(),
+			notUnderHomeError.Error(),
 		)
-	} else if errGetHomeRemovedFilePath != nil {
-		return fmt.Errorf("helper.GetHomeRemovedFilePath: %w", errGetHomeRemovedFilePath)
+	} else if err != nil {
+		return fmt.Errorf("shared.GetHomeRemovedWorkingDir: %w", err)
 	}
-	if errListOneLocal := listOne(pathToFind); errListOneLocal != nil {
-		return fmt.Errorf("listOne: %v: %w", pathToFind, errListOneLocal)
+
+	if err := listOne(pathToFind); err != nil {
+		return fmt.Errorf("listOne: %v: %w", pathToFind, err)
 	}
 	return nil
 }
