@@ -116,7 +116,6 @@ func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error)
 	}
 }
 
-// TODO: This could leak temp files, perhaps need an api that returns the record entity but create the record for the path if it doesn't exist. TLDR instead of exposing a "Create" method directly, expose only the function to get the record
 func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
 	dataFolder, err := data.GetFolder()
 	if err != nil {
