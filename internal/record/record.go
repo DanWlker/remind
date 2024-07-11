@@ -122,6 +122,9 @@ func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
 		return RecordEntity{}, fmt.Errorf("data.GetFolder: %w", err)
 	}
 
+	// Note: This is persistent data, CreateTemp is used to help create
+	// files that have names that don't collide with other files in the
+	// folder. The first argument is dataFolder instead of the usual ""
 	newFile, err := os.CreateTemp(dataFolder, "*"+config.DefaultDataFileFileExtension)
 	if err != nil {
 		return RecordEntity{}, fmt.Errorf("os.CreateTemp: %w", err)
