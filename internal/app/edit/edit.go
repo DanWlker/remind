@@ -3,29 +3,26 @@ package edit
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
-	"slices"
 
 	"github.com/DanWlker/remind/internal/data"
-	r_error "github.com/DanWlker/remind/internal/error"
+	i_error "github.com/DanWlker/remind/internal/error"
 	"github.com/DanWlker/remind/internal/record"
 	"github.com/DanWlker/remind/internal/shared"
 )
 
 func editTodoAssociatedWith(directory string) error {
-	recordItems, err := record.GetFileContents()
-	if err != nil {
-		return fmt.Errorf("record.GetFileContents: %w", err)
+	current, err := record.GetRecordEntityWithIdentifier(directory)
+	var errRecordDoesNotExist i_error.RecordDoesNotExistError
+	if errors.As(err, &errRecordDoesNotExist) {
+		recordIdentifier := errRecordDoesNotExist.ID
+		fmt.Println("No record linked to this folder found: " + recordIdentifier)
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("record.GetRecordEntityWithIdentifier: %w", err)
 	}
-
-	idx := slices.IndexFunc(recordItems, func(item record.RecordEntity) bool {
-		return item.Path == directory
-	})
-	if idx == -1 {
-		return r_error.RecordDoesNotExistError{ID: directory}
-	}
-	current := &recordItems[idx]
 
 	dataFolder, err := data.GetFolder()
 	if err != nil {

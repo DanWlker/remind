@@ -1,18 +1,25 @@
 package remove
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strconv"
 
 	"github.com/DanWlker/remind/internal/data"
+	i_error "github.com/DanWlker/remind/internal/error"
 	"github.com/DanWlker/remind/internal/record"
 	"github.com/DanWlker/remind/internal/shared"
 )
 
 func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) error {
 	projectRecordEntity, err := record.GetRecordEntityWithIdentifier(directory)
-	if err != nil {
+	var errRecordDoesNotExist i_error.RecordDoesNotExistError
+	if errors.As(err, &errRecordDoesNotExist) {
+		recordIdentifier := errRecordDoesNotExist.ID
+		fmt.Println("No record linked to this folder found: " + recordIdentifier)
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("record.GetRecordEntityWithIdentifier: %w", err)
 	}
 
@@ -44,7 +51,12 @@ func removeTodoAssociatedWith(directory string, indexesToRemove map[int]bool) er
 
 func removeAllTodosAssociatedWith(directory string) error {
 	projectRecordEntity, err := record.GetRecordEntityWithIdentifier(directory)
-	if err != nil {
+	var errRecordDoesNotExist i_error.RecordDoesNotExistError
+	if errors.As(err, &errRecordDoesNotExist) {
+		recordIdentifier := errRecordDoesNotExist.ID
+		fmt.Println("No record linked to this folder found: " + recordIdentifier)
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("record.GetRecordEntityWithIdentifier: %w", err)
 	}
 
