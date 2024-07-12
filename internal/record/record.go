@@ -3,7 +3,6 @@ package record
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -64,12 +63,9 @@ func GetFileContents() (items []RecordEntity, err error) {
 		}
 	}()
 
-	dec := yaml.NewDecoder(f)
-	err = dec.Decode(&items)
-	if errors.Is(err, io.EOF) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("dec.Decode: %w", err)
+	items, err = shared.FGetStructFromYaml[RecordEntity](f)
+	if err != nil {
+		return nil, fmt.Errorf("FGetStructFromYaml: %w", err)
 	}
 
 	return items, nil

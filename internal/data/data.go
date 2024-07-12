@@ -9,27 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/goccy/go-yaml"
 	"github.com/spf13/viper"
 
 	"github.com/DanWlker/remind/internal/config"
+	"github.com/DanWlker/remind/internal/shared"
 )
 
 type EditTextFunc func(todo string, index int) (string, error)
-
-func FGetTodoFromReader(r io.Reader) ([]TodoEntity, error) {
-	var items []TodoEntity
-	dec := yaml.NewDecoder(r)
-
-	err := dec.Decode(&items)
-	if errors.Is(err, io.EOF) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("dec.Decode: %w", err)
-	}
-
-	return items, nil
-}
 
 // This does not create the file if it doesn't exist
 func GetTodoFromFile(fileFullPath string) (items []TodoEntity, err error) {
@@ -43,20 +29,11 @@ func GetTodoFromFile(fileFullPath string) (items []TodoEntity, err error) {
 		}
 	}()
 
-	items, err = FGetTodoFromReader(f)
+	items, err = shared.FGetStructFromYaml[TodoEntity](f)
 	if err != nil {
-		return nil, fmt.Errorf("FGetTodoFromReader: %w", err)
+		return nil, fmt.Errorf("FGetStructFromYaml: %w", err)
 	}
 	return items, nil
-}
-
-func FWriteTodoToFile(w io.Writer, todoList []TodoEntity) error {
-	enc := yaml.NewEncoder(w)
-	if err := enc.Encode(todoList); err != nil {
-		return fmt.Errorf("enc.Encode: %w", err)
-	}
-
-	return nil
 }
 
 func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) (err error) {
@@ -77,8 +54,8 @@ func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) (err error) {
 		}
 	}()
 
-	if err = FWriteTodoToFile(f, todoList); err != nil {
-		return fmt.Errorf("FWriteTodoToFile: %w", err)
+	if err = shared.FWriteStructToYaml(f, todoList); err != nil {
+		return fmt.Errorf("FWriteStructToYaml: %w", err)
 	}
 
 	return nil

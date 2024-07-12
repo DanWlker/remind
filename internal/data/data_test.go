@@ -4,42 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 )
-
-func TestFGetTodoFromReader(t *testing.T) {
-	t.Run("Test EOF returns without error", func(t *testing.T) {
-		reader := strings.NewReader("")
-
-		res, err := FGetTodoFromReader(reader)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		if len(res) != 0 {
-			t.Errorf("Expected empty array, got %v", res)
-		}
-	})
-}
-
-func TestFWriteTodoToFile(t *testing.T) {
-	t.Run("Test nil array encodes without error", func(t *testing.T) {
-		ex := "[]\n"
-
-		var b bytes.Buffer
-
-		err := FWriteTodoToFile(&b, nil)
-		if err != nil {
-			t.Errorf("Expected no error, got %v", err)
-		}
-
-		got := b.String()
-		if got != ex {
-			t.Errorf("Expected %v, got %v", strconv.Quote(ex), strconv.Quote(got))
-		}
-	})
-}
 
 func TestFPrettyPrintFile(t *testing.T) {
 	t.Run("Functionality test", func(t *testing.T) {
