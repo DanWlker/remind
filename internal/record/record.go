@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/goccy/go-yaml"
-
 	"github.com/DanWlker/remind/internal/config"
 	"github.com/DanWlker/remind/internal/data"
 	i_error "github.com/DanWlker/remind/internal/error"
@@ -87,12 +85,24 @@ func SetFileContents(items []RecordEntity) (err error) {
 		}
 	}()
 
-	enc := yaml.NewEncoder(f)
-	if err := enc.Encode(items); err != nil {
-		return fmt.Errorf("enc.Encode: %w", err)
+	err = shared.FWriteStructToYaml[RecordEntity](f, items)
+	if err != nil {
+		return fmt.Errorf("shared.FWriteStructToYaml: %w", err)
 	}
 
 	return nil
+}
+
+func FGetRecordIdentityWithIdentifier(items []RecordEntity, identifier string) (RecordEntity, error) {
+	for _, record := range items {
+		if record.Path == identifier {
+			return record, nil
+		}
+	}
+
+	return RecordEntity{}, i_error.RecordDoesNotExistError{
+		ID: identifier,
+	}
 }
 
 func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error) {
@@ -101,15 +111,12 @@ func GetRecordEntityWithIdentifier(homeRemovedPath string) (RecordEntity, error)
 		return RecordEntity{}, fmt.Errorf("GetFileContents: %w", err)
 	}
 
-	for _, record := range allRecords {
-		if record.Path == homeRemovedPath {
-			return record, nil
-		}
+	res, err := FGetRecordIdentityWithIdentifier(allRecords, homeRemovedPath)
+	if err != nil {
+		return RecordEntity{}, fmt.Errorf("FGetRecordIdentityWithIdentifier: %w", err)
 	}
 
-	return RecordEntity{}, i_error.RecordDoesNotExistError{
-		ID: homeRemovedPath,
-	}
+	return res, nil
 }
 
 func CreateNewRecord(pathIdentifier string) (RecordEntity, error) {
