@@ -15,6 +15,22 @@ import (
 	"github.com/DanWlker/remind/internal/config"
 )
 
+type EditTextFunc func(todo string, index int) (string, error)
+
+func FGetTodoFromReader(r io.Reader) ([]TodoEntity, error) {
+	var items []TodoEntity
+	dec := yaml.NewDecoder(r)
+
+	err := dec.Decode(&items)
+	if errors.Is(err, io.EOF) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("dec.Decode: %w", err)
+	}
+
+	return items, nil
+}
+
 // This does not create the file if it doesn't exist
 func GetTodoFromFile(fileFullPath string) (items []TodoEntity, err error) {
 	f, err := os.Open(fileFullPath)
@@ -27,15 +43,20 @@ func GetTodoFromFile(fileFullPath string) (items []TodoEntity, err error) {
 		}
 	}()
 
-	dec := yaml.NewDecoder(f)
-	err = dec.Decode(&items)
-	if errors.Is(err, io.EOF) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("dec.Decode: %w", err)
+	items, err = FGetTodoFromReader(f)
+	if err != nil {
+		return nil, fmt.Errorf("FGetTodoFromReader: %w", err)
+	}
+	return items, nil
+}
+
+func FWriteTodoToFile(w io.Writer, todoList []TodoEntity) error {
+	enc := yaml.NewEncoder(w)
+	if err := enc.Encode(todoList); err != nil {
+		return fmt.Errorf("enc.Encode: %w", err)
 	}
 
-	return items, nil
+	return nil
 }
 
 func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) (err error) {
@@ -56,12 +77,11 @@ func WriteTodoToFile(fileFullPath string, todoList []TodoEntity) (err error) {
 		}
 	}()
 
-	enc := yaml.NewEncoder(f)
-	if err := enc.Encode(todoList); err != nil {
-		return fmt.Errorf("enc.Encode: %w", err)
+	if err = FWriteTodoToFile(f, todoList); err != nil {
+		return fmt.Errorf("FWriteTodoToFile: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 func GetFolder() (string, error) {
@@ -82,29 +102,33 @@ func GetFolder() (string, error) {
 	return dataFolder, nil
 }
 
-func SPrettyPrintFile(fileFullPath string, editText func(todo string, index int) string) (string, error) {
-	var b bytes.Buffer
-
-	if err := FPrettyPrintFile(&b, fileFullPath, editText); err != nil {
-		return "", fmt.Errorf("FPrettyPrintFile: %w", err)
+func SPrettyPrintFile(fileFullPath string, editText EditTextFunc) (string, error) {
+	todoList, err := GetTodoFromFile(fileFullPath)
+	if err != nil {
+		return "", fmt.Errorf("GetTodoFromFile: %w", err)
 	}
 
+	var b bytes.Buffer
+	if err := FPrettyPrintFile(&b, todoList, editText); err != nil {
+		return "", fmt.Errorf("FPrettyPrintFile: %w", err)
+	}
 	return b.String(), nil
 }
 
-func PrettyPrintFile(fileFullPath string, editText func(todo string, index int) string) error {
-	if err := FPrettyPrintFile(os.Stdout, fileFullPath, editText); err != nil {
-		return fmt.Errorf("FPrettyPrintFile: %w", err)
-	}
-	return nil
-}
-
-func FPrettyPrintFile(w io.Writer, fileName string, editText func(todo string, index int) string) error {
-	todoList, err := GetTodoFromFile(fileName)
+func PrettyPrintFile(fileFullPath string, editText EditTextFunc) error {
+	todoList, err := GetTodoFromFile(fileFullPath)
 	if err != nil {
 		return fmt.Errorf("GetTodoFromFile: %w", err)
 	}
 
+	if err := FPrettyPrintFile(os.Stdout, todoList, editText); err != nil {
+		return fmt.Errorf("FPrettyPrintFile: %w", err)
+	}
+
+	return nil
+}
+
+func FPrettyPrintFile(w io.Writer, todoList []TodoEntity, editText EditTextFunc) error {
 	for i, todo := range todoList {
 		if editText == nil {
 			if _, err := fmt.Fprintln(w, todo.Text); err != nil {
@@ -112,7 +136,11 @@ func FPrettyPrintFile(w io.Writer, fileName string, editText func(todo string, i
 			}
 			continue
 		}
-		if _, err := fmt.Fprintln(w, editText(todo.Text, i)); err != nil {
+		res, err := editText(todo.Text, i)
+		if err != nil {
+			return fmt.Errorf("editText: %w", err)
+		}
+		if _, err := fmt.Fprintln(w, res); err != nil {
 			return fmt.Errorf("editText not nil, fmt.Fprintln: %w", err)
 		}
 	}

@@ -37,8 +37,8 @@ func listOne(pathToFind string) error {
 
 	err = data.PrettyPrintFile(
 		filepath.Join(dataFolder, projectRecordEntity.DataFileName),
-		func(todo string, index int) string {
-			return fmt.Sprintf("\t%v. %v", index, todo)
+		func(todo string, index int) (string, error) {
+			return fmt.Sprintf("\t%v. %v", index, todo), nil
 		})
 	if err != nil {
 		return fmt.Errorf("data.PrettyPrintFile: %w", err)
@@ -65,8 +65,8 @@ func listConcurrently(item record.RecordEntity, dataFolder string) (<-chan strin
 		defer close(c)
 		result, err := data.SPrettyPrintFile(
 			filepath.Join(dataFolder, item.DataFileName),
-			func(todo string, index int) string {
-				return fmt.Sprintf("\t%v. %v", index, todo)
+			func(todo string, index int) (string, error) {
+				return fmt.Sprintf("\t%v. %v", index, todo), nil
 			},
 		)
 		if err != nil {
